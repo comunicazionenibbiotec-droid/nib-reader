@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html lang="it">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ZENPSA Reader</title>
+
+    css/style.css
+</head>
+
+<body>
+
+<div class="app">
+
+    <h1>ZENPSA Reader</h1>
+
+    <div class="camera-container">
+
+        <video id="video" autoplay playsinline></video>
+
+        <svg id="overlay" viewBox="0 0 100 200">
+
+            <!-- sagoma generale -->
+
+            <rect x="15" y="10"
+                  width="70" height="180"
+                  rx="8"
+                  class="device-outline"/>
+
+            <!-- ROI A -->
+
+            <circle cx="35" cy="48"
+                    r="8"
+                    class="guide"/>
+
+            <!-- ROI B -->
+
+            <rect x="58"
+                  y="34"
+                  width="16"
+                  height="24"
+                  rx="6"
+                  class="guide"/>
+
+            <!-- ROI C -->
+
+            <rect x="58"
+                  y="78"
+                  width="16"
+                  height="52"
+                  rx="4"
+                  class="guide"/>
+
+        </svg>
+
+    </div>
+
+    <button id="captureBtn">
+        Analizza Test
+    </button>
+
+    <img id="preview">
+
+    <div id="result"></div>
+
+</div>
+
+js/camera.jsscript>
+js/overlay.jsscript>
+js/api.jsscript>
+js/app.jsscript>
+
+</body>
+</html>
