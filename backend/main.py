@@ -11,7 +11,6 @@ from detector import detect_device
 from alignment import alignment_score
 from image_quality import evaluate_quality
 
-
 app = FastAPI()
 
 app.add_middleware(
@@ -38,10 +37,7 @@ def analyze(data: ImageRequest):
         image_string = data.image
 
         if "," in image_string:
-
-            image_string = (
-                image_string.split(",")[1]
-            )
+            image_string = image_string.split(",")[1]
 
         image_bytes = base64.b64decode(
             image_string
@@ -68,10 +64,9 @@ def analyze(data: ImageRequest):
             image
         )
 
-        detection =
-            detect_device(
-                image
-            )
+        detection = detect_device(
+            image
+        )
 
         if detection is None:
 
@@ -81,55 +76,42 @@ def analyze(data: ImageRequest):
 
                 "test_detected": False,
 
-                "reason":
-                    "device_not_found",
+                "reason": "device_not_found",
 
-                "quality":
-                    quality
+                "quality": quality
 
             }
 
-        device_image =
-            detection["image"]
+        device_image = detection["image"]
 
-        bbox =
-            detection["bbox"]
+        bbox = detection["bbox"]
 
-        score =
-            alignment_score(
-                bbox["w"],
-                bbox["h"]
-            )
+        score = alignment_score(
+            bbox["w"],
+            bbox["h"]
+        )
 
         return {
 
-            "accepted":
-                quality["accepted"],
+            "accepted": quality["accepted"],
 
-            "test_detected":
-                True,
+            "test_detected": True,
 
-            "quality":
-                quality,
+            "quality": quality,
 
-            "alignment_score":
-                score,
+            "alignment_score": score,
 
-            "bbox":
-                bbox,
+            "bbox": bbox,
 
-            "image_width":
-                int(
-                    image.shape[1]
-                ),
+            "image_width": int(
+                image.shape[1]
+            ),
 
-            "image_height":
-                int(
-                    image.shape[0]
-                ),
+            "image_height": int(
+                image.shape[0]
+            ),
 
-            "next_step":
-                "roi_extraction"
+            "next_step": "roi_extraction"
 
         }
 
