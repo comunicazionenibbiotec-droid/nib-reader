@@ -39,9 +39,11 @@ def detect_device(image):
         largest
     )
 
-    if area < 10000:
+    print("AREA:", area)
 
-        return None
+    # if area < 10000:
+#     return None
+
 
     x, y, w, h = cv2.boundingRect(
         largest
