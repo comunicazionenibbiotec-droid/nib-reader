@@ -83,7 +83,7 @@ def evaluate_quality(image):
             "too_bright"
         )
 
-    if sharpness < 80:
+    if sharpness < 8:
 
         accepted = False
 
