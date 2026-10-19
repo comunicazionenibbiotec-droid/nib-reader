@@ -1,7 +1,30 @@
-def locate_rois(image):
+dfrom config import (
+    ROI_A,
+    ROI_C
+)
 
-    return {
-        "roi_a": None,
-        "roi_b": None,
-        "roi_c": None
-    }
+
+def extract_roi_a(image):
+
+    x = ROI_A["x"]
+    y = ROI_A["y"]
+    w = ROI_A["w"]
+    h = ROI_A["h"]
+
+    return image[
+        y:y+h,
+        x:x+w
+    ]
+
+
+def extract_roi_c(image):
+
+    x = ROI_C["x"]
+    y = ROI_C["y"]
+    w = ROI_C["w"]
+    h = ROI_C["h"]
+
+    return image[
+        y:y+h,
+        x:x+w
+    ]
