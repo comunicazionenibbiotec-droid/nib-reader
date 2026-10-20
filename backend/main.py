@@ -19,6 +19,10 @@ from image_quality import (
     evaluate_quality
 )
 
+from analytical_reader import (
+    analyze_windows
+)
+
 
 app = FastAPI()
 
@@ -35,16 +39,14 @@ app.add_middleware(
 def root():
     return {
         "status": "online",
-        "version": "roi-detection-1.0"
+        "version": "analytical-reading-1.0"
     }
 
 
 @app.post("/analyze")
 def analyze(data: ImageRequest):
     try:
-        image_string = (
-            data.image
-        )
+        image_string = data.image
 
         if "," in image_string:
             image_string = (
@@ -52,17 +54,13 @@ def analyze(data: ImageRequest):
                 .split(",", 1)[1]
             )
 
-        image_bytes = (
-            base64.b64decode(
-                image_string
-            )
+        image_bytes = base64.b64decode(
+            image_string
         )
 
-        image_array = (
-            np.frombuffer(
-                image_bytes,
-                np.uint8
-            )
+        image_array = np.frombuffer(
+            image_bytes,
+            np.uint8
         )
 
         image = cv2.imdecode(
@@ -73,8 +71,7 @@ def analyze(data: ImageRequest):
         if image is None:
             return {
                 "accepted": False,
-                "error":
-                    "image_decode_error"
+                "error": "image_decode_error"
             }
 
         quality = evaluate_quality(
@@ -89,8 +86,7 @@ def analyze(data: ImageRequest):
             return {
                 "accepted": False,
                 "test_detected": False,
-                "reason":
-                    "device_not_found",
+                "reason": "device_not_found",
                 "quality": quality,
                 "image_width": int(
                     image.shape[1]
@@ -107,17 +103,54 @@ def analyze(data: ImageRequest):
             bbox["h"]
         )
 
+        windows = detection["windows"]
+
         geometry_ok = detection[
             "geometry_ok"
         ]
 
-        windows = detection[
-            "windows"
-        ]
+        analytical_results = {
+            "A": {
+                "analysis_ok": False,
+                "reason": "geometry_not_valid"
+            },
+            "C": {
+                "analysis_ok": False,
+                "reason": "geometry_not_valid"
+            }
+        }
+
+        if geometry_ok:
+            analytical_results = (
+                analyze_windows(
+                    detection[
+                        "normalized_image"
+                    ],
+                    windows
+                )
+            )
+
+        analysis_a_ok = (
+            analytical_results
+            .get("A", {})
+            .get("analysis_ok", False)
+        )
+
+        analysis_c_ok = (
+            analytical_results
+            .get("C", {})
+            .get("analysis_ok", False)
+        )
+
+        analytical_reading_ok = (
+            analysis_a_ok and
+            analysis_c_ok
+        )
 
         accepted = (
             quality["accepted"] and
-            geometry_ok
+            geometry_ok and
+            analytical_reading_ok
         )
 
         reasons = list(
@@ -129,10 +162,23 @@ def analyze(data: ImageRequest):
                 "window_geometry_not_valid"
             )
 
-        next_step = (
-            "analytical_reading"
-            if accepted
-            else "repeat_or_review"
+        if not analysis_a_ok:
+            reasons.append(
+                "window_A_analysis_failed"
+            )
+
+        if not analysis_c_ok:
+            reasons.append(
+                "window_C_analysis_failed"
+            )
+
+        test_state = determine_test_state(
+            analytical_results
+        )
+
+        next_step = determine_next_step(
+            accepted,
+            test_state
         )
 
         return {
@@ -142,41 +188,44 @@ def analyze(data: ImageRequest):
 
             "quality": quality,
 
-            "alignment_score":
-                score,
+            "alignment_score": score,
 
             "bbox": bbox,
 
-            "device_metrics":
-                detection[
-                    "device_metrics"
-                ],
+            "device_metrics": detection[
+                "device_metrics"
+            ],
 
-            "normalized_device": (
-                detection[
-                    "normalized_size"
-                ]
-            ),
+            "normalized_device": detection[
+                "normalized_size"
+            ],
 
             "windows": windows,
 
             "window_A_detected": (
-                windows["A"][
-                    "detected"
-                ]
+                windows["A"]["detected"]
             ),
 
             "window_C_detected": (
-                windows["C"][
-                    "detected"
-                ]
+                windows["C"]["detected"]
             ),
 
-            "geometry_ok":
-                geometry_ok,
+            "geometry_ok": geometry_ok,
 
-            "reasons":
-                reasons,
+            "analytical_reading": {
+                "ok":
+                    analytical_reading_ok,
+
+                "A":
+                    analytical_results["A"],
+
+                "C":
+                    analytical_results["C"]
+            },
+
+            "test_state": test_state,
+
+            "reasons": reasons,
 
             "image_width": int(
                 image.shape[1]
@@ -186,8 +235,7 @@ def analyze(data: ImageRequest):
                 image.shape[0]
             ),
 
-            "next_step":
-                next_step
+            "next_step": next_step
         }
 
     except Exception as error:
@@ -195,3 +243,83 @@ def analyze(data: ImageRequest):
             "accepted": False,
             "error": str(error)
         }
+
+
+def determine_test_state(
+    analytical_results
+):
+    result_a = analytical_results.get(
+        "A",
+        {}
+    )
+
+    result_c = analytical_results.get(
+        "C",
+        {}
+    )
+
+    if (
+        not result_a.get(
+            "analysis_ok",
+            False
+        ) or
+        not result_c.get(
+            "analysis_ok",
+            False
+        )
+    ):
+        return "analysis_failed"
+
+    color_state = result_a.get(
+        "color_state",
+        "unknown"
+    )
+
+    line_count = result_c.get(
+        "line_count",
+        0
+    )
+
+    if (
+        color_state ==
+        "blank_or_unreacted" and
+        line_count == 0
+    ):
+        return "not_run"
+
+    if line_count == 0:
+        return "invalid_no_control_line"
+
+    if line_count == 1:
+        return "valid_one_line"
+
+    if line_count >= 2:
+        return "valid_two_lines"
+
+    return "unknown"
+
+
+def determine_next_step(
+    accepted,
+    test_state
+):
+    if not accepted:
+        return "repeat_or_review"
+
+    if test_state == "not_run":
+        return "test_not_run"
+
+    if test_state == (
+        "invalid_no_control_line"
+    ):
+        return "repeat_test"
+
+    if test_state in [
+        "valid_one_line",
+        "valid_two_lines"
+    ]:
+        return (
+            "semiquantitative_calibration"
+        )
+
+    return "manual_review"
