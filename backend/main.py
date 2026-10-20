@@ -1,17 +1,27 @@
 import base64
+
 import cv2
 import numpy as np
 
 from fastapi import FastAPI
-from fastapi.middleware.cors import CORSMiddleware
+
+from fastapi.middleware.cors import (
+    CORSMiddleware
+)
 
 from models import ImageRequest
 
 from detector import detect_device
+
 from alignment import alignment_score
-from image_quality import evaluate_quality
+
+from image_quality import (
+    evaluate_quality
+)
+
 
 app = FastAPI()
+
 
 app.add_middleware(
     CORSMiddleware,
@@ -23,29 +33,36 @@ app.add_middleware(
 
 @app.get("/")
 def root():
-
     return {
-        "status": "online"
+        "status": "online",
+        "version": "roi-detection-1.0"
     }
 
 
 @app.post("/analyze")
 def analyze(data: ImageRequest):
-
     try:
-
-        image_string = data.image
-
-        if "," in image_string:
-            image_string = image_string.split(",")[1]
-
-        image_bytes = base64.b64decode(
-            image_string
+        image_string = (
+            data.image
         )
 
-        image_array = np.frombuffer(
-            image_bytes,
-            np.uint8
+        if "," in image_string:
+            image_string = (
+                image_string
+                .split(",", 1)[1]
+            )
+
+        image_bytes = (
+            base64.b64decode(
+                image_string
+            )
+        )
+
+        image_array = (
+            np.frombuffer(
+                image_bytes,
+                np.uint8
+            )
         )
 
         image = cv2.imdecode(
@@ -54,10 +71,10 @@ def analyze(data: ImageRequest):
         )
 
         if image is None:
-
             return {
                 "accepted": False,
-                "error": "image_decode_error"
+                "error":
+                    "image_decode_error"
             }
 
         quality = evaluate_quality(
@@ -69,20 +86,19 @@ def analyze(data: ImageRequest):
         )
 
         if detection is None:
-
             return {
-
                 "accepted": False,
-
                 "test_detected": False,
-
-                "reason": "device_not_found",
-
-                "quality": quality
-
+                "reason":
+                    "device_not_found",
+                "quality": quality,
+                "image_width": int(
+                    image.shape[1]
+                ),
+                "image_height": int(
+                    image.shape[0]
+                )
             }
-
-        device_image = detection["image"]
 
         bbox = detection["bbox"]
 
@@ -91,17 +107,76 @@ def analyze(data: ImageRequest):
             bbox["h"]
         )
 
-        return {
+        geometry_ok = detection[
+            "geometry_ok"
+        ]
 
-            "accepted": quality["accepted"],
+        windows = detection[
+            "windows"
+        ]
+
+        accepted = (
+            quality["accepted"] and
+            geometry_ok
+        )
+
+        reasons = list(
+            quality["reasons"]
+        )
+
+        if not geometry_ok:
+            reasons.append(
+                "window_geometry_not_valid"
+            )
+
+        next_step = (
+            "analytical_reading"
+            if accepted
+            else "repeat_or_review"
+        )
+
+        return {
+            "accepted": accepted,
 
             "test_detected": True,
 
             "quality": quality,
 
-            "alignment_score": score,
+            "alignment_score":
+                score,
 
             "bbox": bbox,
+
+            "device_metrics":
+                detection[
+                    "device_metrics"
+                ],
+
+            "normalized_device": (
+                detection[
+                    "normalized_size"
+                ]
+            ),
+
+            "windows": windows,
+
+            "window_A_detected": (
+                windows["A"][
+                    "detected"
+                ]
+            ),
+
+            "window_C_detected": (
+                windows["C"][
+                    "detected"
+                ]
+            ),
+
+            "geometry_ok":
+                geometry_ok,
+
+            "reasons":
+                reasons,
 
             "image_width": int(
                 image.shape[1]
@@ -111,16 +186,12 @@ def analyze(data: ImageRequest):
                 image.shape[0]
             ),
 
-            "next_step": "roi_extraction"
-
+            "next_step":
+                next_step
         }
 
-    except Exception as e:
-
+    except Exception as error:
         return {
-
             "accepted": False,
-
-            "error": str(e)
-
+            "error": str(error)
         }
