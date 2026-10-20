@@ -23,6 +23,11 @@ from analytical_reader import (
     analyze_windows
 )
 
+from calibration_manager import (
+    CalibrationError,
+    get_default_lot_id
+)
+
 
 app = FastAPI()
 
@@ -39,40 +44,25 @@ app.add_middleware(
 def root():
     return {
         "status": "online",
-        "version": "analytical-reading-1.0"
+        "version": "analytical-reading-1.2"
     }
 
 
 @app.post("/analyze")
 def analyze(data: ImageRequest):
     try:
-        image_string = data.image
-
-        if "," in image_string:
-            image_string = (
-                image_string
-                .split(",", 1)[1]
-            )
-
-        image_bytes = base64.b64decode(
-            image_string
-        )
-
-        image_array = np.frombuffer(
-            image_bytes,
-            np.uint8
-        )
-
-        image = cv2.imdecode(
-            image_array,
-            cv2.IMREAD_COLOR
+        image = decode_image(
+            data.image
         )
 
         if image is None:
-            return {
-                "accepted": False,
-                "error": "image_decode_error"
-            }
+            return build_error_response(
+                error="image_decode_error"
+            )
+
+        image_height, image_width = (
+            image.shape[:2]
+        )
 
         quality = evaluate_quality(
             image
@@ -85,61 +75,98 @@ def analyze(data: ImageRequest):
         if detection is None:
             return {
                 "accepted": False,
+
                 "test_detected": False,
-                "reason": "device_not_found",
-                "quality": quality,
-                "image_width": int(
-                    image.shape[1]
-                ),
-                "image_height": int(
-                    image.shape[0]
-                )
+
+                "reason":
+                    "device_not_found",
+
+                "quality":
+                    quality,
+
+                "image_width":
+                    int(image_width),
+
+                "image_height":
+                    int(image_height),
+
+                "next_step":
+                    "repeat_or_review"
             }
 
         bbox = detection["bbox"]
 
-        score = alignment_score(
-            bbox["w"],
-            bbox["h"]
+        legacy_alignment_score = (
+            alignment_score(
+                bbox["w"],
+                bbox["h"]
+            )
         )
 
-        windows = detection["windows"]
+        windows = detection.get(
+            "windows",
+            {}
+        )
 
-        geometry_ok = detection[
-            "geometry_ok"
-        ]
+        geometry_ok = bool(
+            detection.get(
+                "geometry_ok",
+                False
+            )
+        )
 
-        analytical_results = {
-            "A": {
-                "analysis_ok": False,
-                "reason": "geometry_not_valid"
-            },
-            "C": {
-                "analysis_ok": False,
-                "reason": "geometry_not_valid"
-            }
-        }
+        lot_id = resolve_lot_id(
+            data
+        )
+
+        analytical_results = (
+            create_empty_analytical_results(
+                reason="geometry_not_valid"
+            )
+        )
 
         if geometry_ok:
             analytical_results = (
                 analyze_windows(
-                    detection[
-                        "normalized_image"
-                    ],
-                    windows
+                    normalized_device=
+                        detection[
+                            "normalized_image"
+                        ],
+
+                    windows=
+                        windows,
+
+                    lot_id=
+                        lot_id
                 )
             )
 
-        analysis_a_ok = (
-            analytical_results
-            .get("A", {})
-            .get("analysis_ok", False)
+        analysis_a = (
+            analytical_results.get(
+                "A",
+                {}
+            )
         )
 
-        analysis_c_ok = (
-            analytical_results
-            .get("C", {})
-            .get("analysis_ok", False)
+        analysis_c = (
+            analytical_results.get(
+                "C",
+                {}
+            )
+        )
+
+        analysis_a_ok = bool(
+            analysis_a.get(
+                "analysis_ok",
+                False
+            )
+        )
+
+        analysis_c_ok = bool(
+            analysis_c.get(
+                "analysis_ok",
+                False
+            )
         )
 
         analytical_reading_ok = (
@@ -147,102 +174,248 @@ def analyze(data: ImageRequest):
             analysis_c_ok
         )
 
-        accepted = (
-            quality["accepted"] and
-            geometry_ok and
-            analytical_reading_ok
-        )
-
-        reasons = list(
-            quality["reasons"]
-        )
-
-        if not geometry_ok:
-            reasons.append(
-                "window_geometry_not_valid"
-            )
-
-        if not analysis_a_ok:
-            reasons.append(
-                "window_A_analysis_failed"
-            )
-
-        if not analysis_c_ok:
-            reasons.append(
-                "window_C_analysis_failed"
-            )
-
         test_state = determine_test_state(
             analytical_results
         )
 
+        test_valid = determine_test_validity(
+            test_state=test_state,
+            analytical_results=
+                analytical_results
+        )
+
+        reasons = collect_reasons(
+            quality=quality,
+            geometry_ok=geometry_ok,
+            analysis_a_ok=analysis_a_ok,
+            analysis_c_ok=analysis_c_ok,
+            test_state=test_state
+        )
+
+        accepted = determine_accepted(
+            quality=quality,
+            geometry_ok=geometry_ok,
+            analytical_reading_ok=
+                analytical_reading_ok,
+            test_state=test_state
+        )
+
         next_step = determine_next_step(
-            accepted,
-            test_state
+            test_state=test_state,
+            accepted=accepted
+        )
+
+        window_a_detected = bool(
+            windows
+            .get("A", {})
+            .get(
+                "detected",
+                False
+            )
+        )
+
+        window_c_detected = bool(
+            windows
+            .get("C", {})
+            .get(
+                "detected",
+                False
+            )
         )
 
         return {
-            "accepted": accepted,
+            "accepted":
+                accepted,
 
-            "test_detected": True,
+            "test_detected":
+                True,
 
-            "quality": quality,
+            "quality":
+                quality,
 
-            "alignment_score": score,
+            "alignment_score":
+                legacy_alignment_score,
 
-            "bbox": bbox,
+            "bbox":
+                bbox,
 
-            "device_metrics": detection[
-                "device_metrics"
-            ],
+            "device_metrics":
+                detection.get(
+                    "device_metrics",
+                    {}
+                ),
 
-            "normalized_device": detection[
-                "normalized_size"
-            ],
+            "normalized_device":
+                detection.get(
+                    "normalized_size",
+                    {}
+                ),
 
-            "windows": windows,
+            "windows":
+                windows,
 
-            "window_A_detected": (
-                windows["A"]["detected"]
-            ),
+            "window_A_detected":
+                window_a_detected,
 
-            "window_C_detected": (
-                windows["C"]["detected"]
-            ),
+            "window_C_detected":
+                window_c_detected,
 
-            "geometry_ok": geometry_ok,
+            "geometry_ok":
+                geometry_ok,
 
             "analytical_reading": {
                 "ok":
                     analytical_reading_ok,
 
+                "lot_id":
+                    lot_id,
+
                 "A":
-                    analytical_results["A"],
+                    analysis_a,
 
                 "C":
-                    analytical_results["C"]
+                    analysis_c
             },
 
-            "test_state": test_state,
+            "test_valid":
+                test_valid,
 
-            "reasons": reasons,
+            "test_state":
+                test_state,
 
-            "image_width": int(
-                image.shape[1]
-            ),
+            "reasons":
+                reasons,
 
-            "image_height": int(
-                image.shape[0]
-            ),
+            "image_width":
+                int(image_width),
 
-            "next_step": next_step
+            "image_height":
+                int(image_height),
+
+            "next_step":
+                next_step
+        }
+
+    except CalibrationError as error:
+        return {
+            "accepted": False,
+
+            "error":
+                str(error),
+
+            "reason":
+                "calibration_configuration_error",
+
+            "next_step":
+                "review_lot_configuration"
         }
 
     except Exception as error:
         return {
             "accepted": False,
-            "error": str(error)
+
+            "error":
+                str(error),
+
+            "reason":
+                "unexpected_backend_error",
+
+            "next_step":
+                "technical_review"
         }
+
+
+def decode_image(
+    image_string
+):
+    if not image_string:
+        return None
+
+    if "," in image_string:
+        image_string = (
+            image_string
+            .split(",", 1)[1]
+        )
+
+    try:
+        image_bytes = (
+            base64.b64decode(
+                image_string,
+                validate=True
+            )
+        )
+    except Exception:
+        return None
+
+    image_array = np.frombuffer(
+        image_bytes,
+        np.uint8
+    )
+
+    image = cv2.imdecode(
+        image_array,
+        cv2.IMREAD_COLOR
+    )
+
+    return image
+
+
+def resolve_lot_id(data):
+    metadata = getattr(
+        data,
+        "metadata",
+        None
+    )
+
+    if isinstance(
+        metadata,
+        dict
+    ):
+        metadata_lot_id = (
+            metadata.get(
+                "lot_id"
+            )
+        )
+
+        if metadata_lot_id:
+            return str(
+                metadata_lot_id
+            )
+
+    direct_lot_id = getattr(
+        data,
+        "lot_id",
+        None
+    )
+
+    if direct_lot_id:
+        return str(
+            direct_lot_id
+        )
+
+    return get_default_lot_id()
+
+
+def create_empty_analytical_results(
+    reason
+):
+    return {
+        "A": {
+            "analysis_ok":
+                False,
+
+            "reason":
+                reason
+        },
+
+        "C": {
+            "analysis_ok":
+                False,
+
+            "reason":
+                reason
+        }
+    }
 
 
 def determine_test_state(
@@ -258,15 +431,23 @@ def determine_test_state(
         {}
     )
 
-    if (
-        not result_a.get(
-            "analysis_ok",
-            False
-        ) or
-        not result_c.get(
+    analysis_a_ok = bool(
+        result_a.get(
             "analysis_ok",
             False
         )
+    )
+
+    analysis_c_ok = bool(
+        result_c.get(
+            "analysis_ok",
+            False
+        )
+    )
+
+    if (
+        not analysis_a_ok or
+        not analysis_c_ok
     ):
         return "analysis_failed"
 
@@ -275,51 +456,256 @@ def determine_test_state(
         "unknown"
     )
 
-    line_count = result_c.get(
-        "line_count",
-        0
+    control_line_present = bool(
+        result_c.get(
+            "control_line_present",
+            False
+        )
+    )
+
+    test_line_present = bool(
+        result_c.get(
+            "test_line_present",
+            False
+        )
+    )
+
+    line_distance_valid = (
+        result_c.get(
+            "distance_valid"
+        )
+    )
+
+    analytical_c_state = (
+        result_c.get(
+            "test_state",
+            "unknown"
+        )
     )
 
     if (
         color_state ==
         "blank_or_unreacted" and
-        line_count == 0
+        not control_line_present and
+        not test_line_present
     ):
         return "not_run"
 
-    if line_count == 0:
-        return "invalid_no_control_line"
+    if (
+        analytical_c_state ==
+        "invalid_line_spacing"
+    ):
+        return "invalid_line_spacing"
 
-    if line_count == 1:
+    if (
+        test_line_present and
+        not control_line_present
+    ):
+        return (
+            "invalid_missing_control_line"
+        )
+
+    if not control_line_present:
+        return (
+            "invalid_no_control_line"
+        )
+
+    if (
+        control_line_present and
+        not test_line_present
+    ):
         return "valid_one_line"
 
-    if line_count >= 2:
+    if (
+        control_line_present and
+        test_line_present
+    ):
+        if line_distance_valid is False:
+            return (
+                "invalid_line_spacing"
+            )
+
         return "valid_two_lines"
 
     return "unknown"
 
 
-def determine_next_step(
-    accepted,
+def determine_test_validity(
+    test_state,
+    analytical_results
+):
+    result_c = analytical_results.get(
+        "C",
+        {}
+    )
+
+    analytical_test_valid = bool(
+        result_c.get(
+            "test_valid",
+            False
+        )
+    )
+
+    valid_states = {
+        "valid_one_line",
+        "valid_two_lines"
+    }
+
+    return bool(
+        analytical_test_valid and
+        test_state in valid_states
+    )
+
+
+def determine_accepted(
+    quality,
+    geometry_ok,
+    analytical_reading_ok,
     test_state
 ):
-    if not accepted:
-        return "repeat_or_review"
+    if not quality.get(
+        "accepted",
+        False
+    ):
+        return False
 
+    if not geometry_ok:
+        return False
+
+    if not analytical_reading_ok:
+        return False
+
+    rejected_states = {
+        "analysis_failed",
+        "invalid_missing_control_line",
+        "invalid_no_control_line",
+        "invalid_line_spacing",
+        "unknown"
+    }
+
+    if test_state in rejected_states:
+        return False
+
+    # A blank cassette is technically readable,
+    # although the test has not been performed.
+    if test_state == "not_run":
+        return True
+
+    return test_state in {
+        "valid_one_line",
+        "valid_two_lines"
+    }
+
+
+def collect_reasons(
+    quality,
+    geometry_ok,
+    analysis_a_ok,
+    analysis_c_ok,
+    test_state
+):
+    reasons = list(
+        quality.get(
+            "reasons",
+            []
+        )
+    )
+
+    if not geometry_ok:
+        reasons.append(
+            "window_geometry_not_valid"
+        )
+
+    if not analysis_a_ok:
+        reasons.append(
+            "window_A_analysis_failed"
+        )
+
+    if not analysis_c_ok:
+        reasons.append(
+            "window_C_analysis_failed"
+        )
+
+    state_reason_map = {
+        "analysis_failed":
+            "analytical_reading_failed",
+
+        "invalid_missing_control_line":
+            "control_line_missing",
+
+        "invalid_no_control_line":
+            "control_line_missing",
+
+        "invalid_line_spacing":
+            "line_spacing_not_compatible_with_lot",
+
+        "unknown":
+            "test_state_unknown"
+    }
+
+    state_reason = (
+        state_reason_map.get(
+            test_state
+        )
+    )
+
+    if (
+        state_reason and
+        state_reason not in reasons
+    ):
+        reasons.append(
+            state_reason
+        )
+
+    return reasons
+
+
+def determine_next_step(
+    test_state,
+    accepted
+):
     if test_state == "not_run":
         return "test_not_run"
 
-    if test_state == (
+    if test_state in {
+        "invalid_missing_control_line",
         "invalid_no_control_line"
-    ):
+    }:
         return "repeat_test"
 
-    if test_state in [
+    if (
+        test_state ==
+        "invalid_line_spacing"
+    ):
+        return (
+            "review_lot_or_repeat_test"
+        )
+
+    if (
+        test_state ==
+        "analysis_failed"
+    ):
+        return "repeat_or_review"
+
+    if not accepted:
+        return "repeat_or_review"
+
+    if test_state in {
         "valid_one_line",
         "valid_two_lines"
-    ]:
+    }:
         return (
             "semiquantitative_calibration"
         )
 
     return "manual_review"
+
+
+def build_error_response(
+    error
+):
+    return {
+        "accepted": False,
+        "error": error,
+        "next_step": "repeat_or_review"
+    }

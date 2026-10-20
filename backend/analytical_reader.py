@@ -400,6 +400,14 @@ def analyze_window_a(
         )
     )
 
+color_index = None
+
+if (
+    chroma >
+    maximum_blank_chroma and
+    median_saturation >
+    maximum_blank_saturation
+):
     color_index = (
         median_a -
         median_b
@@ -551,11 +559,14 @@ def analyze_window_a(
                 )
         },
 
-        "color_index":
-            round_number(
-                color_index,
-                4
-            ),
+        "color_index": (
+    None
+    if color_index is None
+    else round_number(
+        color_index,
+        4
+    )
+),
 
         "color_state":
             color_state,
