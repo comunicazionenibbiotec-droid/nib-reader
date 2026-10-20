@@ -526,4 +526,322 @@ def calculate_edge_penalty(
     image_height
 ):
     horizontal_margin = max(
-      
+        5,
+        int(
+            image_width *
+            0.01
+        )
+    )
+
+    vertical_margin = max(
+        5,
+        int(
+            image_height *
+            0.01
+        )
+    )
+
+    touches_left = (
+        x <=
+        horizontal_margin
+    )
+
+    touches_top = (
+        y <=
+        vertical_margin
+    )
+
+    touches_right = (
+        x + width >=
+        image_width -
+        horizontal_margin
+    )
+
+    touches_bottom = (
+        y + height >=
+        image_height -
+        vertical_margin
+    )
+
+    edge_contacts = sum([
+        touches_left,
+        touches_top,
+        touches_right,
+        touches_bottom
+    ])
+
+    return min(
+        0.40,
+        edge_contacts *
+        0.10
+    )
+
+
+def check_device_clipped(
+    x,
+    y,
+    width,
+    height,
+    image_width,
+    image_height
+):
+    horizontal_margin = max(
+        5,
+        int(
+            image_width *
+            0.005
+        )
+    )
+
+    vertical_margin = max(
+        5,
+        int(
+            image_height *
+            0.005
+        )
+    )
+
+    touches_left = (
+        x <=
+        horizontal_margin
+    )
+
+    touches_top = (
+        y <=
+        vertical_margin
+    )
+
+    touches_right = (
+        x + width >=
+        image_width -
+        horizontal_margin
+    )
+
+    touches_bottom = (
+        y + height >=
+        image_height -
+        vertical_margin
+    )
+
+    return bool(
+        touches_left or
+        touches_top or
+        touches_right or
+        touches_bottom
+    )
+
+
+def extract_window(
+    normalized_device,
+    relative_coordinates,
+    window_name
+):
+    if (
+        normalized_device is None or
+        normalized_device.size == 0
+    ):
+        return {
+            "detected": False,
+            "roi_extracted": False,
+            "content_verified": False,
+            "name": window_name,
+            "reason":
+                "normalized_device_empty"
+        }
+
+    x1 = int(
+        round(
+            relative_coordinates[
+                "x1"
+            ] *
+            NORMALIZED_WIDTH
+        )
+    )
+
+    y1 = int(
+        round(
+            relative_coordinates[
+                "y1"
+            ] *
+            NORMALIZED_HEIGHT
+        )
+    )
+
+    x2 = int(
+        round(
+            relative_coordinates[
+                "x2"
+            ] *
+            NORMALIZED_WIDTH
+        )
+    )
+
+    y2 = int(
+        round(
+            relative_coordinates[
+                "y2"
+            ] *
+            NORMALIZED_HEIGHT
+        )
+    )
+
+    x1 = max(
+        0,
+        min(
+            x1,
+            NORMALIZED_WIDTH - 1
+        )
+    )
+
+    y1 = max(
+        0,
+        min(
+            y1,
+            NORMALIZED_HEIGHT - 1
+        )
+    )
+
+    x2 = max(
+        x1 + 1,
+        min(
+            x2,
+            NORMALIZED_WIDTH
+        )
+    )
+
+    y2 = max(
+        y1 + 1,
+        min(
+            y2,
+            NORMALIZED_HEIGHT
+        )
+    )
+
+    roi = normalized_device[
+        y1:y2,
+        x1:x2
+    ]
+
+    roi_extracted = (
+        roi is not None and
+        roi.size > 0 and
+        roi.shape[0] >= 50 and
+        roi.shape[1] >= 50
+    )
+
+    if not roi_extracted:
+        return {
+            "detected": False,
+            "roi_extracted": False,
+            "content_verified": False,
+            "name": window_name,
+            "reason": "invalid_roi"
+        }
+
+    quality_metrics = evaluate_roi(
+        roi
+    )
+
+    return {
+        "detected": True,
+
+        "roi_extracted": True,
+
+        "content_verified": False,
+
+        "name": window_name,
+
+        "bbox_normalized": {
+            "x": int(x1),
+            "y": int(y1),
+            "w": int(
+                x2 - x1
+            ),
+            "h": int(
+                y2 - y1
+            )
+        },
+
+        "bbox_relative": {
+            "x1": float(
+                relative_coordinates[
+                    "x1"
+                ]
+            ),
+
+            "y1": float(
+                relative_coordinates[
+                    "y1"
+                ]
+            ),
+
+            "x2": float(
+                relative_coordinates[
+                    "x2"
+                ]
+            ),
+
+            "y2": float(
+                relative_coordinates[
+                    "y2"
+                ]
+            )
+        },
+
+        "quality":
+            quality_metrics
+    }
+
+
+def evaluate_roi(roi):
+    gray = cv2.cvtColor(
+        roi,
+        cv2.COLOR_BGR2GRAY
+    )
+
+    brightness = float(
+        np.mean(gray)
+    )
+
+    sharpness = float(
+        cv2.Laplacian(
+            gray,
+            cv2.CV_64F
+        ).var()
+    )
+
+    saturated_pixels = int(
+        np.sum(
+            gray > 250
+        )
+    )
+
+    total_pixels = int(
+        gray.size
+    )
+
+    if total_pixels <= 0:
+        glare = 0.0
+    else:
+        glare = float(
+            saturated_pixels /
+            total_pixels *
+            100
+        )
+
+    return {
+        "brightness": round(
+            brightness,
+            2
+        ),
+
+        "sharpness": round(
+            sharpness,
+            2
+        ),
+
+        "glare": round(
+            glare,
+            2
+        )
+    }
