@@ -1,0 +1,51 @@
+{
+  "schema_version": "1.0",
+  "default_lot_id": "DEMO-001",
+
+  "lots": {
+    "DEMO-001": {
+      "status": "development",
+
+      "description": "Demo cassette used for initial reader development",
+
+      "psa": {
+        "enabled": true,
+
+        "line_geometry": {
+          "test_half": "upper",
+          "control_half": "lower",
+
+          "expected_distance_relative": 0.325,
+          "distance_tolerance_relative": 0.12,
+
+          "minimum_line_intensity": 7.0,
+          "minimum_line_width_relative": 0.006,
+          "maximum_line_width_relative": 0.12
+        },
+
+        "calibration": {
+          "available": false,
+          "model_type": null,
+          "parameters": null,
+          "concentration_unit": "ng/mL"
+        }
+      },
+
+      "zinc": {
+        "enabled": true,
+
+        "blank_limits": {
+          "maximum_chroma": 7.0,
+          "maximum_saturation_percent": 8.0
+        },
+
+        "calibration": {
+          "available": false,
+          "model_type": null,
+          "parameters": null,
+          "concentration_unit": "ug/mL"
+        }
+      }
+    }
+  }
+}
