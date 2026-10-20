@@ -98,6 +98,7 @@ def analyze_window_a(roi, lot_configuration):
 
     lab = cv2.cvtColor(roi, cv2.COLOR_BGR2LAB).astype(np.float32)
     hsv = cv2.cvtColor(roi, cv2.COLOR_BGR2HSV).astype(np.float32)
+    rgb = cv2.cvtColor(roi, cv2.COLOR_BGR2RGB).astype(np.float32)
 
     saturation_percent = hsv[:, :, 1] * (100.0 / 255.0)
     colored_pixels = disc_pixels & (saturation_percent >= 10.0)
@@ -123,6 +124,9 @@ def analyze_window_a(roi, lot_configuration):
     hue_values = hsv[:, :, 0][analysis_pixels] * 2.0
     saturation_values = hsv[:, :, 1][analysis_pixels] * (100.0 / 255.0)
     value_values = hsv[:, :, 2][analysis_pixels] * (100.0 / 255.0)
+    red_values = rgb[:, :, 0][analysis_pixels]
+    green_values = rgb[:, :, 1][analysis_pixels]
+    blue_values = rgb[:, :, 2][analysis_pixels]
 
     median_l = float(np.median(l_values))
     median_a = float(np.median(a_values))
@@ -151,6 +155,19 @@ def analyze_window_a(roi, lot_configuration):
             color_state = "pink_magenta"
         else:
             color_state = "intermediate"
+
+    median_red = float(np.median(red_values))
+    median_green = float(np.median(green_values))
+    median_blue = float(np.median(blue_values))
+    mean_red = float(np.mean(red_values))
+    mean_green = float(np.mean(green_values))
+    mean_blue = float(np.mean(blue_values))
+    rgb_sum = median_red + median_green + median_blue + 0.000001
+    normalized_red = median_red / rgb_sum
+    normalized_green = median_green / rgb_sum
+    normalized_blue = median_blue / rgb_sum
+    red_excess_absolute = median_red - 0.5 * (median_green + median_blue)
+    optical_intensity = float(np.mean(value_values))
 
     calibration = zinc_configuration.get("calibration", {})
 
@@ -182,6 +199,33 @@ def analyze_window_a(roi, lot_configuration):
             "hue_median_deg": round_number(np.median(hue_values), 2),
             "saturation_median_percent": round_number(median_saturation, 2),
             "value_median_percent": round_number(np.median(value_values), 2),
+        },
+        "absolute_measurement": {
+            "rgb_median": {
+                "R": round_number(median_red, 2),
+                "G": round_number(median_green, 2),
+                "B": round_number(median_blue, 2),
+            },
+            "rgb_mean": {
+                "R": round_number(mean_red, 2),
+                "G": round_number(mean_green, 2),
+                "B": round_number(mean_blue, 2),
+            },
+            "rgb_normalized": {
+                "r": round_number(normalized_red, 5),
+                "g": round_number(normalized_green, 5),
+                "b": round_number(normalized_blue, 5),
+            },
+            "red_excess": round_number(red_excess_absolute, 2),
+            "optical_intensity_percent": round_number(optical_intensity, 2),
+            "lab_vector": [
+                round_number(median_l, 2),
+                round_number(median_a, 2),
+                round_number(median_b, 2),
+            ],
+            "chroma": round_number(chroma, 2),
+            "colored_fraction": round_number(colored_fraction, 4),
+            "pixel_count": selected_count,
         },
         "color_index": (
             None if color_index is None else round_number(color_index, 4)
@@ -389,15 +433,28 @@ def analyze_window_c(roi, lot_configuration):
     else:
         test_state = "two_lines"
 
-    test_control_ratio = None
-    if (
-        test_line_present
-        and control_line_present
-        and control_line["intensity"] > 0
-    ):
-        test_control_ratio = (
-            test_line["intensity"] / control_line["intensity"]
+    peak_height_ratio = None
+    peak_area_ratio = None
+    mean_intensity_ratio = None
+
+    if test_line_present and control_line_present:
+        control_peak_height = float(control_line.get("peak_height", 0.0))
+        test_peak_height = float(test_line.get("peak_height", 0.0))
+        control_peak_area = float(control_line.get("peak_area", 0.0))
+        test_peak_area = float(test_line.get("peak_area", 0.0))
+        control_mean_intensity = float(
+            control_line.get("mean_intensity", 0.0)
         )
+        test_mean_intensity = float(test_line.get("mean_intensity", 0.0))
+
+        if control_peak_height > 0:
+            peak_height_ratio = test_peak_height / control_peak_height
+        if control_peak_area > 0:
+            peak_area_ratio = test_peak_area / control_peak_area
+        if control_mean_intensity > 0:
+            mean_intensity_ratio = (
+                test_mean_intensity / control_mean_intensity
+            )
 
     selected_lines = []
     if test_line is not None:
@@ -447,9 +504,27 @@ def analyze_window_c(roi, lot_configuration):
         "distance_valid": distance_valid,
         "test_control_ratio": (
             None
-            if test_control_ratio is None
-            else round_number(test_control_ratio, 4)
+            if peak_area_ratio is None
+            else round_number(peak_area_ratio, 4)
         ),
+        "test_control_ratio_method": "peak_area_T_over_C",
+        "ratios": {
+            "peak_height_T_over_C": (
+                None
+                if peak_height_ratio is None
+                else round_number(peak_height_ratio, 4)
+            ),
+            "peak_area_T_over_C": (
+                None
+                if peak_area_ratio is None
+                else round_number(peak_area_ratio, 4)
+            ),
+            "mean_intensity_T_over_C": (
+                None
+                if mean_intensity_ratio is None
+                else round_number(mean_intensity_ratio, 4)
+            ),
+        },
         "test_valid": test_valid,
         "test_state": test_state,
         "calibration": {
@@ -588,8 +663,14 @@ def build_line_list(profile, baseline, regions):
 
     for start, end in regions:
         segment = profile[start:end + 1]
+        if segment.size == 0:
+            continue
+
         peak_y = start + int(np.argmax(segment))
-        intensity = float(profile[peak_y] - baseline)
+        peak_height = float(profile[peak_y] - baseline)
+        corrected_segment = np.maximum(segment - baseline, 0.0)
+        peak_area = float(np.sum(corrected_segment))
+        mean_intensity = float(np.mean(corrected_segment))
         position = peak_y / max(1, profile_length - 1)
 
         if position < 0.05 or position > 0.95:
@@ -605,7 +686,10 @@ def build_line_list(profile, baseline, regions):
                     width_pixels / profile_length,
                     4,
                 ),
-                "intensity": round_number(intensity, 2),
+                "peak_height": round_number(peak_height, 2),
+                "peak_area": round_number(peak_area, 2),
+                "mean_intensity": round_number(mean_intensity, 2),
+                "intensity": round_number(peak_height, 2),
                 "start_y": int(start),
                 "end_y": int(end),
             }
