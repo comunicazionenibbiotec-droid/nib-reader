@@ -9,7 +9,26 @@ Pathway = Literal["check_up", "pre_mri", "pre_biopsy", "active_surveillance"]
 Gleason = Literal["6", "7_3_plus_4", "7_4_plus_3", "8", "9", "10"]
 
 
+class SubjectPatch(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+    sample_code: str | None = Field(default=None, min_length=1, max_length=60)
+    urine_collection_volume_ml: float | None = Field(default=None, ge=0, le=2000)
+    clinical_pathway: Pathway | None = None
+    optical_zinc_score_0_4: int | None = Field(default=None, ge=0, le=4)
+    optical_psa_score_0_4: int | None = Field(default=None, ge=0, le=4)
+
+class ClassificationPatch(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+    record_purpose: Literal["clinical", "research", "calibration", "unclassified"] | None = None
+    study_code: str | None = Field(default=None, max_length=80)
+    calibration_code: str | None = Field(default=None, max_length=80)
+    calibration_analyte: Literal["uzinc", "upsa"] | None = None
+    nominal_concentration_ug_ml: float | None = Field(default=None, ge=0)
+    replicate_number: int | None = Field(default=None, ge=1)
+    notes: str | None = Field(default=None, max_length=500)
+
 class ClinicalPatch(BaseModel):
+    model_config = ConfigDict(extra="forbid")
     age: int | None = Field(default=None, ge=18, le=120)
     serum_psa_ng_ml: float | None = Field(default=None, ge=0)
     dre_result: Literal["not_suspicious", "suspicious", "indeterminate"] | None = None
@@ -20,6 +39,7 @@ class ClinicalPatch(BaseModel):
 
 
 class InstrumentPatch(BaseModel):
+    model_config = ConfigDict(extra="forbid")
     value_ug_ml: float | None = Field(default=None, ge=0)
     execution_date: date | None = None
     rapid_test_frozen: bool = False
@@ -41,6 +61,9 @@ class InstrumentPatch(BaseModel):
 
 
 class RecordPatch(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+    subject: SubjectPatch | None = None
+    classification: ClassificationPatch | None = None
     clinical: ClinicalPatch | None = None
     upsa: InstrumentPatch | None = None
     uzinc: InstrumentPatch | None = None

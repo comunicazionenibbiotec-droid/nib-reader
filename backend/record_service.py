@@ -9,6 +9,12 @@ from record_models import TestRecord
 from record_schemas import RecordCreate, RecordPatch
 
 
+def _first_defined(*values: Any) -> Any:
+    for value in values:
+        if value is not None and value != "":
+            return value
+    return None
+
 def _number(value: Any) -> float | None:
     if value is None or value == "":
         return None
@@ -101,16 +107,22 @@ def create_or_update_record(
     )
     record.replicate_number = _integer(classification.get("replicate_number"))
     record.urine_collection_volume_ml = _number(
-        subject.get("urine_collection_volume_ml")
-        or subject.get("urine_volume_ml")
+        _first_defined(
+            subject.get("urine_collection_volume_ml"),
+            subject.get("urine_volume_ml"),
+        )
     )
     record.optical_zinc_score_0_4 = _integer(
-        subject.get("optical_zinc_score_0_4")
-        or subject.get("visual_zinc_score_0_4")
+        _first_defined(
+            subject.get("optical_zinc_score_0_4"),
+            subject.get("visual_zinc_score_0_4"),
+        )
     )
     record.optical_psa_score_0_4 = _integer(
-        subject.get("optical_psa_score_0_4")
-        or subject.get("visual_psa_score_0_4")
+        _first_defined(
+            subject.get("optical_psa_score_0_4"),
+            subject.get("visual_psa_score_0_4"),
+        )
     )
     record.zinc_red_excess = _number(absolute.get("red_excess"))
     record.psa_area_t_c_ratio = _number(
@@ -204,6 +216,35 @@ def patch_record(
     record: TestRecord,
     payload: RecordPatch,
 ) -> TestRecord:
+    if payload.subject is not None:
+        subject_data = payload.subject.model_dump(exclude_unset=True)
+        subject_columns = {
+            "sample_code": "sample_code",
+            "urine_collection_volume_ml": "urine_collection_volume_ml",
+            "clinical_pathway": "clinical_pathway",
+            "optical_zinc_score_0_4": "optical_zinc_score_0_4",
+            "optical_psa_score_0_4": "optical_psa_score_0_4",
+        }
+        for source_name, column_name in subject_columns.items():
+            if source_name in subject_data:
+                setattr(record, column_name, subject_data[source_name])
+
+    if payload.classification is not None:
+        classification_data = payload.classification.model_dump(exclude_unset=True)
+        classification_columns = {
+            "record_purpose": "record_purpose",
+            "study_code": "study_code",
+            "calibration_code": "calibration_code",
+            "calibration_analyte": "calibration_analyte",
+            "nominal_concentration_ug_ml": "nominal_concentration_ug_ml",
+            "replicate_number": "replicate_number",
+        }
+        for source_name, column_name in classification_columns.items():
+            if source_name in classification_data:
+                setattr(record, column_name, classification_data[source_name])
+        if "notes" in classification_data:
+            record.notes = classification_data["notes"]
+
     if payload.clinical is not None:
         clinical_data = payload.clinical.model_dump(exclude_unset=True)
         for name, value in clinical_data.items():
@@ -229,6 +270,26 @@ def patch_record(
     # Build a new JSON-serializable object. Date values must be ISO strings,
     # not Python date objects, before they are written to JSON/JSONB.
     raw_record = dict(record.raw_record or {})
+    raw_subject = dict(raw_record.get("subject") or {})
+    raw_subject.update({
+        "sample_code": record.sample_code,
+        "urine_collection_volume_ml": record.urine_collection_volume_ml,
+        "clinical_pathway": record.clinical_pathway,
+        "optical_zinc_score_0_4": record.optical_zinc_score_0_4,
+        "optical_psa_score_0_4": record.optical_psa_score_0_4,
+    })
+    raw_record["subject"] = raw_subject
+    raw_classification = dict(raw_record.get("classification") or {})
+    raw_classification.update({
+        "record_purpose": record.record_purpose,
+        "study_code": record.study_code,
+        "calibration_code": record.calibration_code,
+        "calibration_analyte": record.calibration_analyte,
+        "nominal_concentration_ug_ml": record.nominal_concentration_ug_ml,
+        "replicate_number": record.replicate_number,
+        "notes": record.notes,
+    })
+    raw_record["classification"] = raw_classification
     manual = dict(raw_record.get("manual_data") or {})
 
     manual["clinical"] = {
