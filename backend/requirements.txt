@@ -6,3 +6,5 @@ scipy
 pillow
 python-multipart
 pydantic
+SQLAlchemy>=2.0,<3.0
+psycopg[binary]>=3.2,<4.0

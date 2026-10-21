@@ -11,9 +11,13 @@ from alignment import alignment_score
 from image_quality import evaluate_quality
 from analytical_reader import analyze_windows
 from calibration_manager import CalibrationError, get_default_lot_id
+from database import create_database_tables
+from records_router import router as records_router
 
 
 app = FastAPI()
+
+app.include_router(records_router)
 
 app.add_middleware(
     CORSMiddleware,
@@ -22,6 +26,9 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+@app.on_event("startup")
+def startup_event():
+    create_database_tables()
 
 @app.get("/")
 def root():
