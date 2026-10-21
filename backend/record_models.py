@@ -31,6 +31,12 @@ class TestRecord(Base):
     progressive_number: Mapped[int | None] = mapped_column(Integer)
     captured_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), index=True)
     clinical_pathway: Mapped[str | None] = mapped_column(String(40), index=True)
+    record_purpose: Mapped[str] = mapped_column(String(30), default="unclassified", index=True)
+    study_code: Mapped[str | None] = mapped_column(String(80))
+    calibration_code: Mapped[str | None] = mapped_column(String(80), index=True)
+    calibration_analyte: Mapped[str | None] = mapped_column(String(20))
+    nominal_concentration_ug_ml: Mapped[float | None] = mapped_column(Float)
+    replicate_number: Mapped[int | None] = mapped_column(Integer)
     urine_collection_volume_ml: Mapped[float | None] = mapped_column(Float)
 
     optical_zinc_score_0_4: Mapped[int | None] = mapped_column(Integer)

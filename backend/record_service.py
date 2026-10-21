@@ -53,6 +53,7 @@ def create_or_update_record(
     raw = payload.model_dump(mode="json", exclude_none=False)
     info = payload.record
     subject = payload.subject
+    classification = payload.classification or {}
     analysis = payload.analysis
     backend = analysis.get("backend", analysis)
     analytical = backend.get("analytical_reading") or {}
@@ -91,6 +92,14 @@ def create_or_update_record(
     record.progressive_number = _integer(info.get("progressive_number"))
     record.captured_at = _captured_at(info)
     record.clinical_pathway = subject.get("clinical_pathway")
+    record.record_purpose = classification.get("record_purpose", "unclassified")
+    record.study_code = classification.get("study_code")
+    record.calibration_code = classification.get("calibration_code")
+    record.calibration_analyte = classification.get("calibration_analyte")
+    record.nominal_concentration_ug_ml = _number(
+        classification.get("nominal_concentration_ug_ml")
+    )
+    record.replicate_number = _integer(classification.get("replicate_number"))
     record.urine_collection_volume_ml = _number(
         subject.get("urine_collection_volume_ml")
         or subject.get("urine_volume_ml")

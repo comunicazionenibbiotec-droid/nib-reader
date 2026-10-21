@@ -56,6 +56,7 @@ class RecordCreate(BaseModel):
     acquisition: dict[str, Any] | None = None
     analysis: dict[str, Any]
     archive_crop: dict[str, Any] | None = None
+    classification: dict[str, Any] | None = None
     manual_data: dict[str, Any] | None = None
 
 
@@ -66,6 +67,12 @@ class RecordSummary(BaseModel):
     sample_code: str
     captured_at: datetime
     clinical_pathway: str | None
+    record_purpose: str
+    study_code: str | None
+    calibration_code: str | None
+    calibration_analyte: str | None
+    nominal_concentration_ug_ml: float | None
+    replicate_number: int | None
     optical_zinc_score_0_4: int | None
     optical_psa_score_0_4: int | None
     zinc_red_excess: float | None
@@ -84,6 +91,12 @@ class RecordDetail(BaseModel):
     progressive_number: int | None
     captured_at: datetime
     clinical_pathway: str | None
+    record_purpose: str
+    study_code: str | None
+    calibration_code: str | None
+    calibration_analyte: str | None
+    nominal_concentration_ug_ml: float | None
+    replicate_number: int | None
     urine_collection_volume_ml: float | None
     optical_zinc_score_0_4: int | None
     optical_psa_score_0_4: int | None
