@@ -1,7 +1,7 @@
 import uuid
 
 from fastapi import APIRouter, Depends, HTTPException, Query, status
-from sqlalchemy import func, select
+from sqlalchemy import select, text
 from sqlalchemy.orm import Session
 
 from database import get_db
@@ -36,6 +36,49 @@ def list_records(
     query = query.order_by(TestRecord.captured_at.desc()).offset(offset).limit(limit)
     return list(db.scalars(query))
 
+@router.get("/health")
+def records_health(
+    db: Session = Depends(get_db),
+):
+    database_check = db.execute(
+        text("SELECT 1")
+    ).scalar_one()
+
+    table_exists = db.execute(
+        text(
+            """
+            SELECT EXISTS (
+                SELECT 1
+                FROM information_schema.tables
+                WHERE table_schema = 'public'
+                AND table_name = 'test_records'
+            )
+            """
+        )
+    ).scalar_one()
+
+    current_database = db.execute(
+        text(
+            "SELECT current_database()"
+        )
+    ).scalar_one()
+
+    current_user = db.execute(
+        text(
+            "SELECT current_user"
+        )
+    ).scalar_one()
+
+    return {
+        "database_connected": (
+            database_check == 1
+        ),
+        "test_records_table_exists": (
+            bool(table_exists)
+        ),
+        "database": current_database,
+        "user": current_user,
+    }
 
 @router.get("/{record_id}", response_model=RecordDetail)
 def get_record(record_id: uuid.UUID, db: Session = Depends(get_db)):

@@ -30,7 +30,30 @@ SessionLocal = sessionmaker(bind=engine, autoflush=False, expire_on_commit=False
 
 
 def create_database_tables() -> None:
-    Base.metadata.create_all(bind=engine)
+    from record_models import TestRecord
+
+    print(
+        "ZENPSA DB engine:",
+        engine.url.render_as_string(
+            hide_password=True
+        ),
+        flush=True,
+    )
+
+    print(
+        "ZENPSA DB registered tables:",
+        list(Base.metadata.tables.keys()),
+        flush=True,
+    )
+
+    Base.metadata.create_all(
+        bind=engine
+    )
+
+    print(
+        "ZENPSA DB initialization completed",
+        flush=True,
+    )
 
 
 def get_db() -> Generator[Session, None, None]:

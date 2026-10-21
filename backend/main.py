@@ -30,7 +30,18 @@ from contextlib import asynccontextmanager
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
+    print(
+        "ZENPSA: database startup beginning",
+        flush=True,
+    )
+
     create_database_tables()
+
+    print(
+        "ZENPSA: database startup completed",
+        flush=True,
+    )
+
     yield
 
 @app.get("/")
