@@ -1,35 +1,24 @@
 import base64
+from contextlib import asynccontextmanager
 
 import cv2
 import numpy as np
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
-from models import ImageRequest
-from detector import detect_device
 from alignment import alignment_score
-from image_quality import evaluate_quality
 from analytical_reader import analyze_windows
 from calibration_manager import CalibrationError, get_default_lot_id
 from database import create_database_tables
+from detector import detect_device
+from image_quality import evaluate_quality
+from models import ImageRequest
 from records_router import router as records_router
 
 
-app = FastAPI()
-
-app.include_router(records_router)
-
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=["*"],
-    allow_methods=["*"],
-    allow_headers=["*"],
-)
-
-from contextlib import asynccontextmanager
-
 @asynccontextmanager
 async def lifespan(app: FastAPI):
+    """Initialize persistent resources when the API starts."""
     print(
         "ZENPSA: database startup beginning",
         flush=True,
@@ -43,6 +32,23 @@ async def lifespan(app: FastAPI):
     )
 
     yield
+
+
+app = FastAPI(
+    title="NIB Reader API",
+    version="analytical-reading-1.2.1",
+    lifespan=lifespan,
+)
+
+app.include_router(records_router)
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
 
 @app.get("/")
 def root():
@@ -103,7 +109,10 @@ def analyze(data: ImageRequest):
         analytical_reading_ok = analysis_a_ok and analysis_c_ok
 
         test_state = determine_test_state(analytical_results)
-        test_valid = determine_test_validity(test_state, analytical_results)
+        test_valid = determine_test_validity(
+            test_state,
+            analytical_results,
+        )
 
         reasons = collect_reasons(
             quality,
@@ -177,7 +186,10 @@ def decode_image(image_string):
         image_string = image_string.split(",", 1)[1]
 
     try:
-        image_bytes = base64.b64decode(image_string, validate=True)
+        image_bytes = base64.b64decode(
+            image_string,
+            validate=True,
+        )
     except Exception:
         return None
 
@@ -202,8 +214,14 @@ def resolve_lot_id(data):
 
 def create_empty_analytical_results(reason):
     return {
-        "A": {"analysis_ok": False, "reason": reason},
-        "C": {"analysis_ok": False, "reason": reason},
+        "A": {
+            "analysis_ok": False,
+            "reason": reason,
+        },
+        "C": {
+            "analysis_ok": False,
+            "reason": reason,
+        },
     }
 
 
@@ -253,7 +271,10 @@ def determine_test_state(analytical_results):
 def determine_test_validity(test_state, analytical_results):
     result_c = analytical_results.get("C", {})
     c_valid = bool(result_c.get("test_valid", False))
-    return c_valid and test_state in {"valid_one_line", "valid_two_lines"}
+    return c_valid and test_state in {
+        "valid_one_line",
+        "valid_two_lines",
+    }
 
 
 def determine_accepted(
@@ -271,7 +292,10 @@ def determine_accepted(
     if test_state == "not_run":
         return True
 
-    return test_state in {"valid_one_line", "valid_two_lines"}
+    return test_state in {
+        "valid_one_line",
+        "valid_two_lines",
+    }
 
 
 def collect_reasons(
@@ -326,7 +350,10 @@ def determine_next_step(test_state, accepted):
     if not accepted:
         return "repeat_or_review"
 
-    if test_state in {"valid_one_line", "valid_two_lines"}:
+    if test_state in {
+        "valid_one_line",
+        "valid_two_lines",
+    }:
         return "semiquantitative_calibration"
 
     return "manual_review"
