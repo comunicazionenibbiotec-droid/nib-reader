@@ -16,6 +16,7 @@ class SubjectPatch(BaseModel):
     clinical_pathway: Pathway | None = None
     optical_zinc_score_0_4: int | None = Field(default=None, ge=0, le=4)
     optical_psa_score_0_4: int | None = Field(default=None, ge=0, le=4)
+    recruitment_center: Literal["irccs_candiolo", "san_luigi_orbassano"] | None = None
 
 class ClassificationPatch(BaseModel):
     model_config = ConfigDict(extra="forbid")
@@ -91,7 +92,9 @@ class RecordSummary(BaseModel):
     base_filename: str
     sample_code: str
     captured_at: datetime
+    captured_date: date | None
     clinical_pathway: str | None
+    recruitment_center: str | None
     record_purpose: str
     study_code: str | None
     calibration_code: str | None
@@ -115,7 +118,9 @@ class RecordDetail(BaseModel):
     sample_code: str
     progressive_number: int | None
     captured_at: datetime
+    captured_date: date | None
     clinical_pathway: str | None
+    recruitment_center: str | None
     record_purpose: str
     study_code: str | None
     calibration_code: str | None
@@ -155,6 +160,12 @@ class RecordDetail(BaseModel):
     uzinc_rapid_frozen_date: date | None
     uzinc_instrumental_frozen: bool
     uzinc_instrumental_frozen_date: date | None
+    device_model: str | None
+    device_platform: str | None
+    device_platform_version: str | None
+    device_browser: str | None
+    device_mobile: bool | None
+    device_user_agent: str | None
     raw_record: dict[str, Any]
     notes: str | None
     created_at: datetime

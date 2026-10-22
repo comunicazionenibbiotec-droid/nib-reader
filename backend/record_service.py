@@ -97,7 +97,17 @@ def create_or_update_record(
     record.sample_code = sample_code
     record.progressive_number = _integer(info.get("progressive_number"))
     record.captured_at = _captured_at(info)
+    record.captured_date = record.captured_at.date()
     record.clinical_pathway = subject.get("clinical_pathway")
+    record.recruitment_center = subject.get("recruitment_center")
+    acquisition = payload.acquisition or {}
+    device = acquisition.get("device") or acquisition.get("acquisition_device") or raw.get("acquisition_device") or {}
+    record.device_model = device.get("model")
+    record.device_platform = device.get("platform")
+    record.device_platform_version = device.get("platform_version")
+    record.device_browser = device.get("browser")
+    record.device_mobile = device.get("mobile")
+    record.device_user_agent = device.get("user_agent")
     record.record_purpose = classification.get("record_purpose", "unclassified")
     record.study_code = classification.get("study_code")
     record.calibration_code = classification.get("calibration_code")
@@ -233,6 +243,7 @@ def patch_record(
             "clinical_pathway": "clinical_pathway",
             "optical_zinc_score_0_4": "optical_zinc_score_0_4",
             "optical_psa_score_0_4": "optical_psa_score_0_4",
+            "recruitment_center": "recruitment_center",
         }
         for source_name, column_name in subject_columns.items():
             if source_name in subject_data:
@@ -286,6 +297,7 @@ def patch_record(
         "clinical_pathway": record.clinical_pathway,
         "optical_zinc_score_0_4": record.optical_zinc_score_0_4,
         "optical_psa_score_0_4": record.optical_psa_score_0_4,
+        "recruitment_center": record.recruitment_center,
     })
     raw_record["subject"] = raw_subject
     raw_classification = dict(raw_record.get("classification") or {})
