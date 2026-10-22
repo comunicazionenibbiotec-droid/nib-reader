@@ -39,6 +39,12 @@ def migrate_record_classification_columns() -> None:
         "ALTER TABLE test_records ADD COLUMN IF NOT EXISTS calibration_analyte VARCHAR(20)",
         "ALTER TABLE test_records ADD COLUMN IF NOT EXISTS nominal_concentration_ug_ml DOUBLE PRECISION",
         "ALTER TABLE test_records ADD COLUMN IF NOT EXISTS replicate_number INTEGER",
+        "ALTER TABLE test_records ADD COLUMN IF NOT EXISTS upsa_lot_id VARCHAR(80)",
+        "ALTER TABLE test_records ADD COLUMN IF NOT EXISTS uzinc_lot_id VARCHAR(80)",
+        "ALTER TABLE test_records ADD COLUMN IF NOT EXISTS upsa_corrected_ug_ml DOUBLE PRECISION",
+        "ALTER TABLE test_records ADD COLUMN IF NOT EXISTS upsa_absolute_quantity_ug DOUBLE PRECISION",
+        "ALTER TABLE test_records ADD COLUMN IF NOT EXISTS uzinc_corrected_ug_ml DOUBLE PRECISION",
+        "ALTER TABLE test_records ADD COLUMN IF NOT EXISTS uzinc_absolute_quantity_ug DOUBLE PRECISION",
         "CREATE INDEX IF NOT EXISTS ix_test_records_record_purpose ON test_records (record_purpose)",
         "CREATE INDEX IF NOT EXISTS ix_test_records_calibration_code ON test_records (calibration_code)",
     ]

@@ -179,6 +179,8 @@ def _apply_instrument(
     prefix: str,
     data: dict[str, Any],
 ) -> None:
+    setattr(record, f"{prefix}_lot_id", data.get("lot_id"))
+    setattr(record, f"{prefix}_corrected_ug_ml", _number(data.get("corrected_ug_ml")))
     setattr(
         record,
         f"{prefix}_instrumental_ug_ml",
@@ -209,6 +211,13 @@ def _apply_instrument(
         f"{prefix}_instrumental_frozen_date",
         _date(data.get("instrumental_frozen_date")),
     )
+
+
+def _recalculate_absolute(record: TestRecord, prefix: str) -> None:
+    corrected = getattr(record, f"{prefix}_corrected_ug_ml")
+    volume = record.urine_collection_volume_ml
+    absolute = volume * corrected if volume is not None and corrected is not None else None
+    setattr(record, f"{prefix}_absolute_quantity_ug", absolute)
 
 
 def patch_record(
@@ -254,14 +263,14 @@ def patch_record(
         _patch_instrument(
             record,
             "upsa",
-            payload.upsa.model_dump(),
+            payload.upsa.model_dump(exclude_unset=True),
         )
 
     if payload.uzinc is not None:
         _patch_instrument(
             record,
             "uzinc",
-            payload.uzinc.model_dump(),
+            payload.uzinc.model_dump(exclude_unset=True),
         )
 
     if "notes" in payload.model_fields_set:
@@ -322,36 +331,11 @@ def _patch_instrument(
     prefix: str,
     data: dict[str, Any],
 ) -> None:
-    setattr(
-        record,
-        f"{prefix}_instrumental_ug_ml",
-        data.get("value_ug_ml"),
-    )
-    setattr(
-        record,
-        f"{prefix}_execution_date",
-        data.get("execution_date"),
-    )
-    setattr(
-        record,
-        f"{prefix}_rapid_frozen",
-        data.get("rapid_test_frozen", False),
-    )
-    setattr(
-        record,
-        f"{prefix}_rapid_frozen_date",
-        data.get("rapid_test_frozen_date"),
-    )
-    setattr(
-        record,
-        f"{prefix}_instrumental_frozen",
-        data.get("instrumental_frozen", False),
-    )
-    setattr(
-        record,
-        f"{prefix}_instrumental_frozen_date",
-        data.get("instrumental_frozen_date"),
-    )
+    mapping = {"lot_id": f"{prefix}_lot_id", "value_ug_ml": f"{prefix}_instrumental_ug_ml", "corrected_ug_ml": f"{prefix}_corrected_ug_ml", "execution_date": f"{prefix}_execution_date", "rapid_test_frozen": f"{prefix}_rapid_frozen", "rapid_test_frozen_date": f"{prefix}_rapid_frozen_date", "instrumental_frozen": f"{prefix}_instrumental_frozen", "instrumental_frozen_date": f"{prefix}_instrumental_frozen_date"}
+    for source_name, target_name in mapping.items():
+        if source_name in data:
+            setattr(record, target_name, data[source_name])
+    _recalculate_absolute(record, prefix)
 
 
 def _instrument_json(
@@ -359,6 +343,9 @@ def _instrument_json(
     prefix: str,
 ) -> dict[str, Any]:
     return {
+        "lot_id": getattr(record, f"{prefix}_lot_id"),
+        "corrected_ug_ml": getattr(record, f"{prefix}_corrected_ug_ml"),
+        "absolute_quantity_ug": getattr(record, f"{prefix}_absolute_quantity_ug"),
         "value_ug_ml": getattr(
             record,
             f"{prefix}_instrumental_ug_ml",

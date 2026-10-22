@@ -46,6 +46,8 @@ class TestRecord(Base):
     test_state: Mapped[str | None] = mapped_column(String(50), index=True)
     test_valid: Mapped[bool] = mapped_column(Boolean, default=False)
     lot_id: Mapped[str | None] = mapped_column(String(80), index=True)
+    upsa_lot_id: Mapped[str | None] = mapped_column(String(80), index=True)
+    uzinc_lot_id: Mapped[str | None] = mapped_column(String(80), index=True)
 
     age: Mapped[int | None] = mapped_column(Integer)
     serum_psa_ng_ml: Mapped[float | None] = mapped_column(Float)
@@ -56,6 +58,8 @@ class TestRecord(Base):
     diagnosis: Mapped[str | None] = mapped_column(String(30), index=True)
 
     upsa_instrumental_ug_ml: Mapped[float | None] = mapped_column(Float)
+    upsa_corrected_ug_ml: Mapped[float | None] = mapped_column(Float)
+    upsa_absolute_quantity_ug: Mapped[float | None] = mapped_column(Float)
     upsa_execution_date: Mapped[date | None] = mapped_column(Date)
     upsa_rapid_frozen: Mapped[bool] = mapped_column(Boolean, default=False)
     upsa_rapid_frozen_date: Mapped[date | None] = mapped_column(Date)
@@ -63,6 +67,8 @@ class TestRecord(Base):
     upsa_instrumental_frozen_date: Mapped[date | None] = mapped_column(Date)
 
     uzinc_instrumental_ug_ml: Mapped[float | None] = mapped_column(Float)
+    uzinc_corrected_ug_ml: Mapped[float | None] = mapped_column(Float)
+    uzinc_absolute_quantity_ug: Mapped[float | None] = mapped_column(Float)
     uzinc_execution_date: Mapped[date | None] = mapped_column(Date)
     uzinc_rapid_frozen: Mapped[bool] = mapped_column(Boolean, default=False)
     uzinc_rapid_frozen_date: Mapped[date | None] = mapped_column(Date)

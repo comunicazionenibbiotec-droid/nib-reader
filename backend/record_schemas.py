@@ -40,7 +40,9 @@ class ClinicalPatch(BaseModel):
 
 class InstrumentPatch(BaseModel):
     model_config = ConfigDict(extra="forbid")
+    lot_id: str | None = Field(default=None, max_length=80)
     value_ug_ml: float | None = Field(default=None, ge=0)
+    corrected_ug_ml: float | None = Field(default=None, ge=0)
     execution_date: date | None = None
     rapid_test_frozen: bool = False
     rapid_test_frozen_date: date | None = None
@@ -135,13 +137,19 @@ class RecordDetail(BaseModel):
     prostate_volume_ml: float | None
     gleason_score: str | None
     diagnosis: str | None
+    upsa_lot_id: str | None
+    uzinc_lot_id: str | None
     upsa_instrumental_ug_ml: float | None
+    upsa_corrected_ug_ml: float | None
+    upsa_absolute_quantity_ug: float | None
     upsa_execution_date: date | None
     upsa_rapid_frozen: bool
     upsa_rapid_frozen_date: date | None
     upsa_instrumental_frozen: bool
     upsa_instrumental_frozen_date: date | None
     uzinc_instrumental_ug_ml: float | None
+    uzinc_corrected_ug_ml: float | None
+    uzinc_absolute_quantity_ug: float | None
     uzinc_execution_date: date | None
     uzinc_rapid_frozen: bool
     uzinc_rapid_frozen_date: date | None
