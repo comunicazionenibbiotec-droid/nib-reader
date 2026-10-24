@@ -65,7 +65,6 @@ class QmsLotRelationship(Base):
     notes: Mapped[str | None] = mapped_column(Text)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utc_now)
 
-
 class QmsQcRecord(Base):
     __tablename__ = "qms_qc_records"
     __table_args__ = (Index("ix_qms_qc_records_lot_date", "lot_id", "captured_at"),)
