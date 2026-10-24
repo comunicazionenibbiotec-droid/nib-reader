@@ -1,12 +1,12 @@
 import uuid
 from datetime import date, datetime
-from pydantic import BaseModel, ConfigDict, Field, model_validator
 
-LOT_STATUSES = {"draft", "active", "released", "rejected", "closed", "invalidated"}
-RELATIONSHIP_TYPES = {"processed_into", "cut_into", "assembled_into", "used_in", "packed_into", "reference_material_for"}
+from pydantic import BaseModel, ConfigDict
+
 
 class ProductOut(BaseModel):
     model_config = ConfigDict(from_attributes=True)
+
     id: uuid.UUID
     pm_code: str
     product_name: str
@@ -14,8 +14,10 @@ class ProductOut(BaseModel):
     product_stage: str
     active: bool
 
+
 class LotRecordTypeOut(BaseModel):
     model_config = ConfigDict(from_attributes=True)
+
     id: uuid.UUID
     product_id: uuid.UUID
     pm_code: str
@@ -28,27 +30,19 @@ class LotRecordTypeOut(BaseModel):
     next_progressive: int
     next_full_lot_record_code: str
 
+
 class LotCreate(BaseModel):
+    """Minimal payload used to register a new production lot."""
+
     model_config = ConfigDict(extra="forbid")
+
     lot_record_type_id: uuid.UUID
-    manufacturing_date: date | None = None
-    expiry_date: date | None = None
-    protocol_version: str | None = Field(default=None, max_length=80)
-    operator: str | None = Field(default=None, max_length=120)
-    status: str = "draft"
-    notes: str | None = Field(default=None, max_length=4000)
-    parent_lot_ids: list[uuid.UUID] = []
-    relationship_type: str | None = None
-    @model_validator(mode="after")
-    def validate_qms(self):
-        if self.status not in LOT_STATUSES:
-            raise ValueError("Stato lotto non valido")
-        if self.parent_lot_ids and self.relationship_type not in RELATIONSHIP_TYPES:
-            raise ValueError("Selezionare un tipo di relazione QMS valido")
-        return self
+    manufacturing_date: date
+
 
 class LotOut(BaseModel):
     model_config = ConfigDict(from_attributes=True)
+
     id: uuid.UUID
     lot_record_type_id: uuid.UUID
     pm_code: str
@@ -64,8 +58,10 @@ class LotOut(BaseModel):
     created_at: datetime
     updated_at: datetime
 
+
 class RelationshipOut(BaseModel):
     model_config = ConfigDict(from_attributes=True)
+
     id: uuid.UUID
     parent_lot_id: uuid.UUID
     child_lot_id: uuid.UUID
