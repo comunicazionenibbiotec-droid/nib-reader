@@ -65,26 +65,19 @@ class QmsLotRelationship(Base):
     notes: Mapped[str | None] = mapped_column(Text)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utc_now)
 
+
 class QmsQcRecord(Base):
     __tablename__ = "qms_qc_records"
-    __table_args__ = (
-        Index("ix_qms_qc_records_lot_date", "lot_id", "captured_at"),
-    )
-
-    id: Mapped[uuid.UUID] = mapped_column(
-        Uuid(as_uuid=True), primary_key=True, default=uuid.uuid4
-    )
-    lot_id: Mapped[uuid.UUID] = mapped_column(
-        ForeignKey("qms_lots.id", ondelete="RESTRICT"), index=True
-    )
+    __table_args__ = (Index("ix_qms_qc_records_lot_date", "lot_id", "captured_at"),)
+    id: Mapped[uuid.UUID] = mapped_column(Uuid(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    lot_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("qms_lots.id", ondelete="RESTRICT"), index=True)
     qc_type: Mapped[str] = mapped_column(String(50), index=True)
     capture_mode: Mapped[str] = mapped_column(String(30))
-    captured_at: Mapped[datetime] = mapped_column(DateTime(timezone=True))
+    captured_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), index=True)
     image_width: Mapped[int] = mapped_column(Integer)
     image_height: Mapped[int] = mapped_column(Integer)
     image_filename: Mapped[str | None] = mapped_column(String(220))
     roi_data_json: Mapped[str] = mapped_column(Text)
-    created_at: Mapped[datetime] = mapped_column(
-        DateTime(timezone=True), default=utc_now
-    )
+    analysis_data_json: Mapped[str | None] = mapped_column(Text)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utc_now)
     lot: Mapped[QmsLot] = relationship()

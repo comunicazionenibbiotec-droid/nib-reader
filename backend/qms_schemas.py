@@ -72,9 +72,9 @@ class RelationshipOut(BaseModel):
     relationship_type: str
     notes: str | None
 
+
 class QcRecordCreate(BaseModel):
     model_config = ConfigDict(extra="forbid")
-
     lot_id: uuid.UUID
     qc_type: str
     capture_mode: str
@@ -83,19 +83,4 @@ class QcRecordCreate(BaseModel):
     image_height: int
     image_filename: str | None = None
     roi_data: dict
-
-
-class QcRecordOut(BaseModel):
-    model_config = ConfigDict(from_attributes=True)
-
-    id: uuid.UUID
-    lot_id: uuid.UUID
-    lot_code: str
-    qc_type: str
-    capture_mode: str
-    captured_at: datetime
-    image_width: int
-    image_height: int
-    image_filename: str | None
-    roi_data: dict
-    created_at: datetime
+    analysis_data: dict | None = None
