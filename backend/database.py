@@ -26,7 +26,7 @@ SessionLocal = sessionmaker(bind=engine, autoflush=False, expire_on_commit=False
 
 def create_database_tables() -> None:
     from record_models import TestRecord
-    from qms_models import QmsLot, QmsLotRecordType, QmsLotRelationship, QmsProduct
+    from qms_models import QmsLot, QmsLotRecordType, QmsLotRelationship, QmsProduct, QmsQcRecord
     Base.metadata.create_all(bind=engine)
     with SessionLocal() as session:
         from qms_service import seed_qms_master_data

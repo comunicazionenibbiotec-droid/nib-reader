@@ -1,10 +1,11 @@
+import json
 import uuid
 from fastapi import APIRouter, Depends, HTTPException, Query, status
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 from database import get_db
-from qms_models import QmsLot, QmsLotRecordType, QmsLotRelationship, QmsProduct
-from qms_schemas import LotCreate, LotOut, ProductOut, RelationshipOut
+from qms_models import QmsLot, QmsLotRecordType, QmsLotRelationship, QmsProduct, QmsQcRecord
+from qms_schemas import LotCreate, LotOut, ProductOut, RelationshipOut, QcRecordCreate
 from qms_service import build_full_code, create_lot, next_progressive
 
 router = APIRouter(prefix="/qms", tags=["qms"])
@@ -44,3 +45,71 @@ def get_lot(lot_id: uuid.UUID, db: Session=Depends(get_db)):
 @router.get("/lots/{lot_id}/relationships", response_model=list[RelationshipOut])
 def relationships(lot_id: uuid.UUID, db: Session=Depends(get_db)):
     return list(db.scalars(select(QmsLotRelationship).where((QmsLotRelationship.parent_lot_id==lot_id)|(QmsLotRelationship.child_lot_id==lot_id))))
+
+
+@router.post("/qc-records", status_code=status.HTTP_201_CREATED)
+def add_qc_record(payload: QcRecordCreate, db: Session = Depends(get_db)):
+    lot = db.get(QmsLot, payload.lot_id)
+    if lot is None:
+        raise HTTPException(status_code=404, detail="Lotto non trovato")
+    if payload.qc_type == "colorimetric_pad" and lot.lr_document_code != "LR-000104":
+        raise HTTPException(
+            status_code=409,
+            detail="Il QC del pad richiede un lotto LR-000104",
+        )
+    record = QmsQcRecord(
+        lot_id=lot.id,
+        qc_type=payload.qc_type,
+        capture_mode=payload.capture_mode,
+        captured_at=payload.captured_at,
+        image_width=payload.image_width,
+        image_height=payload.image_height,
+        image_filename=payload.image_filename,
+        roi_data_json=json.dumps(payload.roi_data, ensure_ascii=False),
+    )
+    db.add(record)
+    db.commit()
+    db.refresh(record)
+    return {
+        "id": record.id,
+        "lot_id": record.lot_id,
+        "lot_code": lot.full_lot_record_code,
+        "qc_type": record.qc_type,
+        "capture_mode": record.capture_mode,
+        "captured_at": record.captured_at,
+        "image_width": record.image_width,
+        "image_height": record.image_height,
+        "image_filename": record.image_filename,
+        "roi_data": json.loads(record.roi_data_json),
+        "created_at": record.created_at,
+    }
+
+
+@router.get("/qc-records")
+def qc_records(
+    lot_id: uuid.UUID | None = None,
+    limit: int = Query(default=200, ge=1, le=500),
+    db: Session = Depends(get_db),
+):
+    query = select(QmsQcRecord, QmsLot).join(QmsLot)
+    if lot_id:
+        query = query.where(QmsQcRecord.lot_id == lot_id)
+    rows = db.execute(
+        query.order_by(QmsQcRecord.captured_at.desc()).limit(limit)
+    ).all()
+    return [
+        {
+            "id": record.id,
+            "lot_id": record.lot_id,
+            "lot_code": lot.full_lot_record_code,
+            "qc_type": record.qc_type,
+            "capture_mode": record.capture_mode,
+            "captured_at": record.captured_at,
+            "image_width": record.image_width,
+            "image_height": record.image_height,
+            "image_filename": record.image_filename,
+            "roi_data": json.loads(record.roi_data_json),
+            "created_at": record.created_at,
+        }
+        for record, lot in rows
+    ]
