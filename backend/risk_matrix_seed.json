@@ -1,0 +1,2310 @@
+{
+  "version": "2026-10-24-jeffreys-v1",
+  "method": "Jeffreys posterior mean (k+0.5)/(n+1)",
+  "rows": [
+    {
+      "id": "z34_p34_none",
+      "zinc_group": "3-4",
+      "upsa_group": "3-4",
+      "clinical_filter": "none",
+      "clinical_filter_label": "Nessun filtro",
+      "n": 36,
+      "events": {
+        "any": 34,
+        "ge_3_4": 23,
+        "ge_4_3": 12
+      },
+      "raw_percent": {
+        "any": 94.4,
+        "ge_3_4": 63.9,
+        "ge_4_3": 33.3
+      },
+      "probabilities": {
+        "any": 93.2,
+        "ge_3_4": 63.5,
+        "ge_4_3": 33.8
+      },
+      "note": ""
+    },
+    {
+      "id": "z34_p34_pirads",
+      "zinc_group": "3-4",
+      "upsa_group": "3-4",
+      "clinical_filter": "pirads",
+      "clinical_filter_label": "PI-RADS > 3",
+      "n": 12,
+      "events": {
+        "any": 12,
+        "ge_3_4": 12,
+        "ge_4_3": 8
+      },
+      "raw_percent": {
+        "any": 100,
+        "ge_3_4": 100,
+        "ge_4_3": 66.7
+      },
+      "probabilities": {
+        "any": 96.2,
+        "ge_3_4": 96.2,
+        "ge_4_3": 65.4
+      },
+      "note": ""
+    },
+    {
+      "id": "z34_p34_psa",
+      "zinc_group": "3-4",
+      "upsa_group": "3-4",
+      "clinical_filter": "psa",
+      "clinical_filter_label": "PSA > 10",
+      "n": 22,
+      "events": {
+        "any": 21,
+        "ge_3_4": 16,
+        "ge_4_3": 8
+      },
+      "raw_percent": {
+        "any": 95.5,
+        "ge_3_4": 72.7,
+        "ge_4_3": 36.4
+      },
+      "probabilities": {
+        "any": 93.5,
+        "ge_3_4": 71.7,
+        "ge_4_3": 37.0
+      },
+      "note": ""
+    },
+    {
+      "id": "z34_p34_dre",
+      "zinc_group": "3-4",
+      "upsa_group": "3-4",
+      "clinical_filter": "dre",
+      "clinical_filter_label": "DRE = 1",
+      "n": 11,
+      "events": {
+        "any": 11,
+        "ge_3_4": 11,
+        "ge_4_3": 9
+      },
+      "raw_percent": {
+        "any": 100,
+        "ge_3_4": 100,
+        "ge_4_3": 81.8
+      },
+      "probabilities": {
+        "any": 95.8,
+        "ge_3_4": 95.8,
+        "ge_4_3": 79.2
+      },
+      "note": ""
+    },
+    {
+      "id": "z34_p34_pirads_psa",
+      "zinc_group": "3-4",
+      "upsa_group": "3-4",
+      "clinical_filter": "pirads_psa",
+      "clinical_filter_label": "PI-RADS > 3 e PSA > 10",
+      "n": 14,
+      "events": {
+        "any": 14,
+        "ge_3_4": 13,
+        "ge_4_3": 8
+      },
+      "raw_percent": {
+        "any": 100,
+        "ge_3_4": 92.9,
+        "ge_4_3": 57.1
+      },
+      "probabilities": {
+        "any": 96.7,
+        "ge_3_4": 90.0,
+        "ge_4_3": 56.7
+      },
+      "note": ""
+    },
+    {
+      "id": "z34_p34_pirads_dre",
+      "zinc_group": "3-4",
+      "upsa_group": "3-4",
+      "clinical_filter": "pirads_dre",
+      "clinical_filter_label": "PI-RADS > 3 e DRE = 1",
+      "n": 8,
+      "events": {
+        "any": 8,
+        "ge_3_4": 8,
+        "ge_4_3": 8
+      },
+      "raw_percent": {
+        "any": 100,
+        "ge_3_4": 100,
+        "ge_4_3": 100
+      },
+      "probabilities": {
+        "any": 94.4,
+        "ge_3_4": 94.4,
+        "ge_4_3": 94.4
+      },
+      "note": "Interpretare con cautela"
+    },
+    {
+      "id": "z34_p34_dre_psa",
+      "zinc_group": "3-4",
+      "upsa_group": "3-4",
+      "clinical_filter": "dre_psa",
+      "clinical_filter_label": "DRE = 1 e PSA > 10",
+      "n": 8,
+      "events": {
+        "any": 8,
+        "ge_3_4": 8,
+        "ge_4_3": 5
+      },
+      "raw_percent": {
+        "any": 100,
+        "ge_3_4": 100,
+        "ge_4_3": 62.5
+      },
+      "probabilities": {
+        "any": 94.4,
+        "ge_3_4": 94.4,
+        "ge_4_3": 61.1
+      },
+      "note": "Interpretare con cautela"
+    },
+    {
+      "id": "z34_p34_pirads_dre_psa",
+      "zinc_group": "3-4",
+      "upsa_group": "3-4",
+      "clinical_filter": "pirads_dre_psa",
+      "clinical_filter_label": "PI-RADS > 3 e DRE = 1 e PSA > 10",
+      "n": 6,
+      "events": {
+        "any": 6,
+        "ge_3_4": 6,
+        "ge_4_3": 5
+      },
+      "raw_percent": {
+        "any": 100,
+        "ge_3_4": 100,
+        "ge_4_3": 83.3
+      },
+      "probabilities": {
+        "any": 92.9,
+        "ge_3_4": 92.9,
+        "ge_4_3": 78.6
+      },
+      "note": "Interpretare con cautela"
+    },
+    {
+      "id": "z2_p34_none",
+      "zinc_group": "2",
+      "upsa_group": "3-4",
+      "clinical_filter": "none",
+      "clinical_filter_label": "Nessun filtro",
+      "n": 15,
+      "events": {
+        "any": 13,
+        "ge_3_4": 8,
+        "ge_4_3": 5
+      },
+      "raw_percent": {
+        "any": 86.7,
+        "ge_3_4": 53.3,
+        "ge_4_3": 33.3
+      },
+      "probabilities": {
+        "any": 84.4,
+        "ge_3_4": 53.1,
+        "ge_4_3": 34.4
+      },
+      "note": ""
+    },
+    {
+      "id": "z2_p34_pirads",
+      "zinc_group": "2",
+      "upsa_group": "3-4",
+      "clinical_filter": "pirads",
+      "clinical_filter_label": "PI-RADS > 3",
+      "n": 5,
+      "events": {
+        "any": 5,
+        "ge_3_4": 5,
+        "ge_4_3": 4
+      },
+      "raw_percent": {
+        "any": 100,
+        "ge_3_4": 100,
+        "ge_4_3": 80.0
+      },
+      "probabilities": {
+        "any": 91.7,
+        "ge_3_4": 91.7,
+        "ge_4_3": 75.0
+      },
+      "note": "Interpretare con cautela"
+    },
+    {
+      "id": "z2_p34_psa",
+      "zinc_group": "2",
+      "upsa_group": "3-4",
+      "clinical_filter": "psa",
+      "clinical_filter_label": "PSA > 10",
+      "n": 7,
+      "events": {
+        "any": 7,
+        "ge_3_4": 5,
+        "ge_4_3": 2
+      },
+      "raw_percent": {
+        "any": 100,
+        "ge_3_4": 71.4,
+        "ge_4_3": 28.6
+      },
+      "probabilities": {
+        "any": 93.8,
+        "ge_3_4": 68.8,
+        "ge_4_3": 31.2
+      },
+      "note": "Interpretare con cautela"
+    },
+    {
+      "id": "z2_p34_dre",
+      "zinc_group": "2",
+      "upsa_group": "3-4",
+      "clinical_filter": "dre",
+      "clinical_filter_label": "DRE = 1",
+      "n": 5,
+      "events": {
+        "any": 4,
+        "ge_3_4": 4,
+        "ge_4_3": 4
+      },
+      "raw_percent": {
+        "any": 80.0,
+        "ge_3_4": 80.0,
+        "ge_4_3": 80.0
+      },
+      "probabilities": {
+        "any": 75.0,
+        "ge_3_4": 75.0,
+        "ge_4_3": 75.0
+      },
+      "note": "Interpretare con cautela"
+    },
+    {
+      "id": "z2_p34_pirads_psa",
+      "zinc_group": "2",
+      "upsa_group": "3-4",
+      "clinical_filter": "pirads_psa",
+      "clinical_filter_label": "PI-RADS > 3 e PSA > 10",
+      "n": 7,
+      "events": {
+        "any": 7,
+        "ge_3_4": 6,
+        "ge_4_3": 4
+      },
+      "raw_percent": {
+        "any": 100,
+        "ge_3_4": 85.7,
+        "ge_4_3": 57.1
+      },
+      "probabilities": {
+        "any": 93.8,
+        "ge_3_4": 81.2,
+        "ge_4_3": 56.2
+      },
+      "note": "Interpretare con cautela"
+    },
+    {
+      "id": "z2_p34_pirads_dre",
+      "zinc_group": "2",
+      "upsa_group": "3-4",
+      "clinical_filter": "pirads_dre",
+      "clinical_filter_label": "PI-RADS > 3 e DRE = 1",
+      "n": 4,
+      "events": {
+        "any": 4,
+        "ge_3_4": 4,
+        "ge_4_3": 2
+      },
+      "raw_percent": {
+        "any": 100,
+        "ge_3_4": 100,
+        "ge_4_3": 50.0
+      },
+      "probabilities": {
+        "any": 90.0,
+        "ge_3_4": 90.0,
+        "ge_4_3": 50.0
+      },
+      "note": "Molto instabile"
+    },
+    {
+      "id": "z2_p34_dre_psa",
+      "zinc_group": "2",
+      "upsa_group": "3-4",
+      "clinical_filter": "dre_psa",
+      "clinical_filter_label": "DRE = 1 e PSA > 10",
+      "n": 2,
+      "events": {
+        "any": 2,
+        "ge_3_4": 2,
+        "ge_4_3": 1
+      },
+      "raw_percent": {
+        "any": 100,
+        "ge_3_4": 100,
+        "ge_4_3": 50.0
+      },
+      "probabilities": {
+        "any": 83.3,
+        "ge_3_4": 83.3,
+        "ge_4_3": 50.0
+      },
+      "note": "Molto instabile"
+    },
+    {
+      "id": "z2_p34_pirads_dre_psa",
+      "zinc_group": "2",
+      "upsa_group": "3-4",
+      "clinical_filter": "pirads_dre_psa",
+      "clinical_filter_label": "PI-RADS > 3 e DRE = 1 e PSA > 10",
+      "n": 1,
+      "events": {
+        "any": 1,
+        "ge_3_4": 1,
+        "ge_4_3": 1
+      },
+      "raw_percent": {
+        "any": 100,
+        "ge_3_4": 100,
+        "ge_4_3": 100
+      },
+      "probabilities": {
+        "any": 75.0,
+        "ge_3_4": 75.0,
+        "ge_4_3": 75.0
+      },
+      "note": "Molto instabile"
+    },
+    {
+      "id": "z01_p34_none",
+      "zinc_group": "0-1",
+      "upsa_group": "3-4",
+      "clinical_filter": "none",
+      "clinical_filter_label": "Nessun filtro",
+      "n": 2,
+      "events": {
+        "any": 0,
+        "ge_3_4": 0,
+        "ge_4_3": 0
+      },
+      "raw_percent": {
+        "any": 0,
+        "ge_3_4": 0,
+        "ge_4_3": 0
+      },
+      "probabilities": {
+        "any": 16.7,
+        "ge_3_4": 16.7,
+        "ge_4_3": 16.7
+      },
+      "note": "Molto instabile"
+    },
+    {
+      "id": "z01_p34_pirads",
+      "zinc_group": "0-1",
+      "upsa_group": "3-4",
+      "clinical_filter": "pirads",
+      "clinical_filter_label": "PI-RADS > 3",
+      "n": 0,
+      "events": {
+        "any": 0,
+        "ge_3_4": 0,
+        "ge_4_3": 0
+      },
+      "raw_percent": {
+        "any": null,
+        "ge_3_4": null,
+        "ge_4_3": null
+      },
+      "probabilities": {
+        "any": null,
+        "ge_3_4": null,
+        "ge_4_3": null
+      },
+      "note": "Nessun caso"
+    },
+    {
+      "id": "z01_p34_psa",
+      "zinc_group": "0-1",
+      "upsa_group": "3-4",
+      "clinical_filter": "psa",
+      "clinical_filter_label": "PSA > 10",
+      "n": 1,
+      "events": {
+        "any": 0,
+        "ge_3_4": 0,
+        "ge_4_3": 0
+      },
+      "raw_percent": {
+        "any": 0,
+        "ge_3_4": 0,
+        "ge_4_3": 0
+      },
+      "probabilities": {
+        "any": 25.0,
+        "ge_3_4": 25.0,
+        "ge_4_3": 25.0
+      },
+      "note": "Molto instabile"
+    },
+    {
+      "id": "z01_p34_dre",
+      "zinc_group": "0-1",
+      "upsa_group": "3-4",
+      "clinical_filter": "dre",
+      "clinical_filter_label": "DRE = 1",
+      "n": 1,
+      "events": {
+        "any": 0,
+        "ge_3_4": 0,
+        "ge_4_3": 0
+      },
+      "raw_percent": {
+        "any": 0,
+        "ge_3_4": 0,
+        "ge_4_3": 0
+      },
+      "probabilities": {
+        "any": 25.0,
+        "ge_3_4": 25.0,
+        "ge_4_3": 25.0
+      },
+      "note": "Molto instabile"
+    },
+    {
+      "id": "z01_p34_pirads_psa",
+      "zinc_group": "0-1",
+      "upsa_group": "3-4",
+      "clinical_filter": "pirads_psa",
+      "clinical_filter_label": "PI-RADS > 3 e PSA > 10",
+      "n": 0,
+      "events": {
+        "any": 0,
+        "ge_3_4": 0,
+        "ge_4_3": 0
+      },
+      "raw_percent": {
+        "any": null,
+        "ge_3_4": null,
+        "ge_4_3": null
+      },
+      "probabilities": {
+        "any": null,
+        "ge_3_4": null,
+        "ge_4_3": null
+      },
+      "note": "Nessun caso"
+    },
+    {
+      "id": "z01_p34_pirads_dre",
+      "zinc_group": "0-1",
+      "upsa_group": "3-4",
+      "clinical_filter": "pirads_dre",
+      "clinical_filter_label": "PI-RADS > 3 e DRE = 1",
+      "n": 0,
+      "events": {
+        "any": 0,
+        "ge_3_4": 0,
+        "ge_4_3": 0
+      },
+      "raw_percent": {
+        "any": null,
+        "ge_3_4": null,
+        "ge_4_3": null
+      },
+      "probabilities": {
+        "any": null,
+        "ge_3_4": null,
+        "ge_4_3": null
+      },
+      "note": "Nessun caso"
+    },
+    {
+      "id": "z01_p34_dre_psa",
+      "zinc_group": "0-1",
+      "upsa_group": "3-4",
+      "clinical_filter": "dre_psa",
+      "clinical_filter_label": "DRE = 1 e PSA > 10",
+      "n": 0,
+      "events": {
+        "any": 0,
+        "ge_3_4": 0,
+        "ge_4_3": 0
+      },
+      "raw_percent": {
+        "any": null,
+        "ge_3_4": null,
+        "ge_4_3": null
+      },
+      "probabilities": {
+        "any": null,
+        "ge_3_4": null,
+        "ge_4_3": null
+      },
+      "note": "Nessun caso"
+    },
+    {
+      "id": "z01_p34_pirads_dre_psa",
+      "zinc_group": "0-1",
+      "upsa_group": "3-4",
+      "clinical_filter": "pirads_dre_psa",
+      "clinical_filter_label": "PI-RADS > 3 e DRE = 1 e PSA > 10",
+      "n": 0,
+      "events": {
+        "any": 0,
+        "ge_3_4": 0,
+        "ge_4_3": 0
+      },
+      "raw_percent": {
+        "any": null,
+        "ge_3_4": null,
+        "ge_4_3": null
+      },
+      "probabilities": {
+        "any": null,
+        "ge_3_4": null,
+        "ge_4_3": null
+      },
+      "note": "Nessun caso"
+    },
+    {
+      "id": "z34_p2_none",
+      "zinc_group": "3-4",
+      "upsa_group": "2",
+      "clinical_filter": "none",
+      "clinical_filter_label": "Nessun filtro",
+      "n": 19,
+      "events": {
+        "any": 15,
+        "ge_3_4": 8,
+        "ge_4_3": 5
+      },
+      "raw_percent": {
+        "any": 78.9,
+        "ge_3_4": 42.1,
+        "ge_4_3": 26.3
+      },
+      "probabilities": {
+        "any": 77.5,
+        "ge_3_4": 42.5,
+        "ge_4_3": 27.5
+      },
+      "note": ""
+    },
+    {
+      "id": "z34_p2_pirads",
+      "zinc_group": "3-4",
+      "upsa_group": "2",
+      "clinical_filter": "pirads",
+      "clinical_filter_label": "PI-RADS > 3",
+      "n": 5,
+      "events": {
+        "any": 5,
+        "ge_3_4": 5,
+        "ge_4_3": 4
+      },
+      "raw_percent": {
+        "any": 100,
+        "ge_3_4": 100,
+        "ge_4_3": 80.0
+      },
+      "probabilities": {
+        "any": 91.7,
+        "ge_3_4": 91.7,
+        "ge_4_3": 75.0
+      },
+      "note": "Interpretare con cautela"
+    },
+    {
+      "id": "z34_p2_psa",
+      "zinc_group": "3-4",
+      "upsa_group": "2",
+      "clinical_filter": "psa",
+      "clinical_filter_label": "PSA > 10",
+      "n": 11,
+      "events": {
+        "any": 10,
+        "ge_3_4": 6,
+        "ge_4_3": 1
+      },
+      "raw_percent": {
+        "any": 90.9,
+        "ge_3_4": 54.5,
+        "ge_4_3": 9.1
+      },
+      "probabilities": {
+        "any": 87.5,
+        "ge_3_4": 54.2,
+        "ge_4_3": 12.5
+      },
+      "note": ""
+    },
+    {
+      "id": "z34_p2_dre",
+      "zinc_group": "3-4",
+      "upsa_group": "2",
+      "clinical_filter": "dre",
+      "clinical_filter_label": "DRE = 1",
+      "n": 2,
+      "events": {
+        "any": 2,
+        "ge_3_4": 1,
+        "ge_4_3": 2
+      },
+      "raw_percent": {
+        "any": 100,
+        "ge_3_4": 50.0,
+        "ge_4_3": 100
+      },
+      "probabilities": {
+        "any": 83.3,
+        "ge_3_4": 50.0,
+        "ge_4_3": 83.3
+      },
+      "note": "Molto instabile"
+    },
+    {
+      "id": "z34_p2_pirads_psa",
+      "zinc_group": "3-4",
+      "upsa_group": "2",
+      "clinical_filter": "pirads_psa",
+      "clinical_filter_label": "PI-RADS > 3 e PSA > 10",
+      "n": 6,
+      "events": {
+        "any": 6,
+        "ge_3_4": 2,
+        "ge_4_3": 4
+      },
+      "raw_percent": {
+        "any": 100,
+        "ge_3_4": 33.3,
+        "ge_4_3": 66.7
+      },
+      "probabilities": {
+        "any": 92.9,
+        "ge_3_4": 35.7,
+        "ge_4_3": 64.3
+      },
+      "note": "Interpretare con cautela"
+    },
+    {
+      "id": "z34_p2_pirads_dre",
+      "zinc_group": "3-4",
+      "upsa_group": "2",
+      "clinical_filter": "pirads_dre",
+      "clinical_filter_label": "PI-RADS > 3 e DRE = 1",
+      "n": 4,
+      "events": {
+        "any": 4,
+        "ge_3_4": 4,
+        "ge_4_3": 1
+      },
+      "raw_percent": {
+        "any": 100,
+        "ge_3_4": 100,
+        "ge_4_3": 25.0
+      },
+      "probabilities": {
+        "any": 90.0,
+        "ge_3_4": 90.0,
+        "ge_4_3": 30.0
+      },
+      "note": "Molto instabile"
+    },
+    {
+      "id": "z34_p2_dre_psa",
+      "zinc_group": "3-4",
+      "upsa_group": "2",
+      "clinical_filter": "dre_psa",
+      "clinical_filter_label": "DRE = 1 e PSA > 10",
+      "n": 1,
+      "events": {
+        "any": 1,
+        "ge_3_4": 1,
+        "ge_4_3": 1
+      },
+      "raw_percent": {
+        "any": 100,
+        "ge_3_4": 100,
+        "ge_4_3": 100
+      },
+      "probabilities": {
+        "any": 75.0,
+        "ge_3_4": 75.0,
+        "ge_4_3": 75.0
+      },
+      "note": "Molto instabile"
+    },
+    {
+      "id": "z34_p2_pirads_dre_psa",
+      "zinc_group": "3-4",
+      "upsa_group": "2",
+      "clinical_filter": "pirads_dre_psa",
+      "clinical_filter_label": "PI-RADS > 3 e DRE = 1 e PSA > 10",
+      "n": 2,
+      "events": {
+        "any": 2,
+        "ge_3_4": 1,
+        "ge_4_3": 1
+      },
+      "raw_percent": {
+        "any": 100,
+        "ge_3_4": 50.0,
+        "ge_4_3": 50.0
+      },
+      "probabilities": {
+        "any": 83.3,
+        "ge_3_4": 50.0,
+        "ge_4_3": 50.0
+      },
+      "note": "Molto instabile"
+    },
+    {
+      "id": "z2_p2_none",
+      "zinc_group": "2",
+      "upsa_group": "2",
+      "clinical_filter": "none",
+      "clinical_filter_label": "Nessun filtro",
+      "n": 13,
+      "events": {
+        "any": 8,
+        "ge_3_4": 4,
+        "ge_4_3": 3
+      },
+      "raw_percent": {
+        "any": 61.5,
+        "ge_3_4": 30.8,
+        "ge_4_3": 23.1
+      },
+      "probabilities": {
+        "any": 60.7,
+        "ge_3_4": 32.1,
+        "ge_4_3": 25.0
+      },
+      "note": ""
+    },
+    {
+      "id": "z2_p2_pirads",
+      "zinc_group": "2",
+      "upsa_group": "2",
+      "clinical_filter": "pirads",
+      "clinical_filter_label": "PI-RADS > 3",
+      "n": 3,
+      "events": {
+        "any": 3,
+        "ge_3_4": 3,
+        "ge_4_3": 2
+      },
+      "raw_percent": {
+        "any": 100,
+        "ge_3_4": 100,
+        "ge_4_3": 66.7
+      },
+      "probabilities": {
+        "any": 87.5,
+        "ge_3_4": 87.5,
+        "ge_4_3": 62.5
+      },
+      "note": "Molto instabile"
+    },
+    {
+      "id": "z2_p2_psa",
+      "zinc_group": "2",
+      "upsa_group": "2",
+      "clinical_filter": "psa",
+      "clinical_filter_label": "PSA > 10",
+      "n": 6,
+      "events": {
+        "any": 4,
+        "ge_3_4": 2,
+        "ge_4_3": 2
+      },
+      "raw_percent": {
+        "any": 66.7,
+        "ge_3_4": 33.3,
+        "ge_4_3": 33.3
+      },
+      "probabilities": {
+        "any": 64.3,
+        "ge_3_4": 35.7,
+        "ge_4_3": 35.7
+      },
+      "note": "Interpretare con cautela"
+    },
+    {
+      "id": "z2_p2_dre",
+      "zinc_group": "2",
+      "upsa_group": "2",
+      "clinical_filter": "dre",
+      "clinical_filter_label": "DRE = 1",
+      "n": 5,
+      "events": {
+        "any": 5,
+        "ge_3_4": 3,
+        "ge_4_3": 3
+      },
+      "raw_percent": {
+        "any": 100,
+        "ge_3_4": 60.0,
+        "ge_4_3": 60.0
+      },
+      "probabilities": {
+        "any": 91.7,
+        "ge_3_4": 58.3,
+        "ge_4_3": 58.3
+      },
+      "note": "Interpretare con cautela"
+    },
+    {
+      "id": "z2_p2_pirads_psa",
+      "zinc_group": "2",
+      "upsa_group": "2",
+      "clinical_filter": "pirads_psa",
+      "clinical_filter_label": "PI-RADS > 3 e PSA > 10",
+      "n": 6,
+      "events": {
+        "any": 6,
+        "ge_3_4": 4,
+        "ge_4_3": 2
+      },
+      "raw_percent": {
+        "any": 100,
+        "ge_3_4": 66.7,
+        "ge_4_3": 33.3
+      },
+      "probabilities": {
+        "any": 92.9,
+        "ge_3_4": 64.3,
+        "ge_4_3": 35.7
+      },
+      "note": "Interpretare con cautela"
+    },
+    {
+      "id": "z2_p2_pirads_dre",
+      "zinc_group": "2",
+      "upsa_group": "2",
+      "clinical_filter": "pirads_dre",
+      "clinical_filter_label": "PI-RADS > 3 e DRE = 1",
+      "n": 2,
+      "events": {
+        "any": 2,
+        "ge_3_4": 2,
+        "ge_4_3": 2
+      },
+      "raw_percent": {
+        "any": 100,
+        "ge_3_4": 100,
+        "ge_4_3": 100
+      },
+      "probabilities": {
+        "any": 83.3,
+        "ge_3_4": 83.3,
+        "ge_4_3": 83.3
+      },
+      "note": "Molto instabile"
+    },
+    {
+      "id": "z2_p2_dre_psa",
+      "zinc_group": "2",
+      "upsa_group": "2",
+      "clinical_filter": "dre_psa",
+      "clinical_filter_label": "DRE = 1 e PSA > 10",
+      "n": 2,
+      "events": {
+        "any": 2,
+        "ge_3_4": 2,
+        "ge_4_3": 2
+      },
+      "raw_percent": {
+        "any": 100,
+        "ge_3_4": 100,
+        "ge_4_3": 100
+      },
+      "probabilities": {
+        "any": 83.3,
+        "ge_3_4": 83.3,
+        "ge_4_3": 83.3
+      },
+      "note": "Molto instabile"
+    },
+    {
+      "id": "z2_p2_pirads_dre_psa",
+      "zinc_group": "2",
+      "upsa_group": "2",
+      "clinical_filter": "pirads_dre_psa",
+      "clinical_filter_label": "PI-RADS > 3 e DRE = 1 e PSA > 10",
+      "n": 2,
+      "events": {
+        "any": 2,
+        "ge_3_4": 2,
+        "ge_4_3": 2
+      },
+      "raw_percent": {
+        "any": 100,
+        "ge_3_4": 100,
+        "ge_4_3": 100
+      },
+      "probabilities": {
+        "any": 83.3,
+        "ge_3_4": 83.3,
+        "ge_4_3": 83.3
+      },
+      "note": "Molto instabile"
+    },
+    {
+      "id": "z01_p2_none",
+      "zinc_group": "0-1",
+      "upsa_group": "2",
+      "clinical_filter": "none",
+      "clinical_filter_label": "Nessun filtro",
+      "n": 9,
+      "events": {
+        "any": 6,
+        "ge_3_4": 2,
+        "ge_4_3": 1
+      },
+      "raw_percent": {
+        "any": 66.7,
+        "ge_3_4": 22.2,
+        "ge_4_3": 11.1
+      },
+      "probabilities": {
+        "any": 65.0,
+        "ge_3_4": 25.0,
+        "ge_4_3": 15.0
+      },
+      "note": "Interpretare con cautela"
+    },
+    {
+      "id": "z01_p2_pirads",
+      "zinc_group": "0-1",
+      "upsa_group": "2",
+      "clinical_filter": "pirads",
+      "clinical_filter_label": "PI-RADS > 3",
+      "n": 1,
+      "events": {
+        "any": 1,
+        "ge_3_4": 1,
+        "ge_4_3": 0
+      },
+      "raw_percent": {
+        "any": 100,
+        "ge_3_4": 100,
+        "ge_4_3": 0
+      },
+      "probabilities": {
+        "any": 75.0,
+        "ge_3_4": 75.0,
+        "ge_4_3": 25.0
+      },
+      "note": "Molto instabile"
+    },
+    {
+      "id": "z01_p2_psa",
+      "zinc_group": "0-1",
+      "upsa_group": "2",
+      "clinical_filter": "psa",
+      "clinical_filter_label": "PSA > 10",
+      "n": 5,
+      "events": {
+        "any": 5,
+        "ge_3_4": 1,
+        "ge_4_3": 1
+      },
+      "raw_percent": {
+        "any": 100,
+        "ge_3_4": 20.0,
+        "ge_4_3": 20.0
+      },
+      "probabilities": {
+        "any": 91.7,
+        "ge_3_4": 25.0,
+        "ge_4_3": 25.0
+      },
+      "note": "Interpretare con cautela"
+    },
+    {
+      "id": "z01_p2_dre",
+      "zinc_group": "0-1",
+      "upsa_group": "2",
+      "clinical_filter": "dre",
+      "clinical_filter_label": "DRE = 1",
+      "n": 2,
+      "events": {
+        "any": 1,
+        "ge_3_4": 1,
+        "ge_4_3": 1
+      },
+      "raw_percent": {
+        "any": 50.0,
+        "ge_3_4": 50.0,
+        "ge_4_3": 50.0
+      },
+      "probabilities": {
+        "any": 50.0,
+        "ge_3_4": 50.0,
+        "ge_4_3": 50.0
+      },
+      "note": "Molto instabile"
+    },
+    {
+      "id": "z01_p2_pirads_psa",
+      "zinc_group": "0-1",
+      "upsa_group": "2",
+      "clinical_filter": "pirads_psa",
+      "clinical_filter_label": "PI-RADS > 3 e PSA > 10",
+      "n": 1,
+      "events": {
+        "any": 1,
+        "ge_3_4": 1,
+        "ge_4_3": 0
+      },
+      "raw_percent": {
+        "any": 100,
+        "ge_3_4": 100,
+        "ge_4_3": 0
+      },
+      "probabilities": {
+        "any": 75.0,
+        "ge_3_4": 75.0,
+        "ge_4_3": 25.0
+      },
+      "note": "Molto instabile"
+    },
+    {
+      "id": "z01_p2_pirads_dre",
+      "zinc_group": "0-1",
+      "upsa_group": "2",
+      "clinical_filter": "pirads_dre",
+      "clinical_filter_label": "PI-RADS > 3 e DRE = 1",
+      "n": 0,
+      "events": {
+        "any": 0,
+        "ge_3_4": 0,
+        "ge_4_3": 1
+      },
+      "raw_percent": {
+        "any": null,
+        "ge_3_4": null,
+        "ge_4_3": null
+      },
+      "probabilities": {
+        "any": null,
+        "ge_3_4": null,
+        "ge_4_3": null
+      },
+      "note": "Nessun caso"
+    },
+    {
+      "id": "z01_p2_dre_psa",
+      "zinc_group": "0-1",
+      "upsa_group": "2",
+      "clinical_filter": "dre_psa",
+      "clinical_filter_label": "DRE = 1 e PSA > 10",
+      "n": 1,
+      "events": {
+        "any": 1,
+        "ge_3_4": 1,
+        "ge_4_3": 0
+      },
+      "raw_percent": {
+        "any": 100,
+        "ge_3_4": 100,
+        "ge_4_3": 0
+      },
+      "probabilities": {
+        "any": 75.0,
+        "ge_3_4": 75.0,
+        "ge_4_3": 25.0
+      },
+      "note": "Molto instabile"
+    },
+    {
+      "id": "z01_p2_pirads_dre_psa",
+      "zinc_group": "0-1",
+      "upsa_group": "2",
+      "clinical_filter": "pirads_dre_psa",
+      "clinical_filter_label": "PI-RADS > 3 e DRE = 1 e PSA > 10",
+      "n": 0,
+      "events": {
+        "any": 0,
+        "ge_3_4": 0,
+        "ge_4_3": 0
+      },
+      "raw_percent": {
+        "any": null,
+        "ge_3_4": null,
+        "ge_4_3": null
+      },
+      "probabilities": {
+        "any": null,
+        "ge_3_4": null,
+        "ge_4_3": null
+      },
+      "note": "Nessun caso"
+    },
+    {
+      "id": "z34_p1_none",
+      "zinc_group": "3-4",
+      "upsa_group": "1",
+      "clinical_filter": "none",
+      "clinical_filter_label": "Nessun filtro",
+      "n": 21,
+      "events": {
+        "any": 14,
+        "ge_3_4": 8,
+        "ge_4_3": 4
+      },
+      "raw_percent": {
+        "any": 66.7,
+        "ge_3_4": 38.1,
+        "ge_4_3": 19.0
+      },
+      "probabilities": {
+        "any": 65.9,
+        "ge_3_4": 38.6,
+        "ge_4_3": 20.5
+      },
+      "note": ""
+    },
+    {
+      "id": "z34_p1_pirads",
+      "zinc_group": "3-4",
+      "upsa_group": "1",
+      "clinical_filter": "pirads",
+      "clinical_filter_label": "PI-RADS > 3",
+      "n": 4,
+      "events": {
+        "any": 4,
+        "ge_3_4": 4,
+        "ge_4_3": 2
+      },
+      "raw_percent": {
+        "any": 100,
+        "ge_3_4": 100,
+        "ge_4_3": 50.0
+      },
+      "probabilities": {
+        "any": 90.0,
+        "ge_3_4": 90.0,
+        "ge_4_3": 50.0
+      },
+      "note": "Molto instabile"
+    },
+    {
+      "id": "z34_p1_psa",
+      "zinc_group": "3-4",
+      "upsa_group": "1",
+      "clinical_filter": "psa",
+      "clinical_filter_label": "PSA > 10",
+      "n": 11,
+      "events": {
+        "any": 8,
+        "ge_3_4": 4,
+        "ge_4_3": 2
+      },
+      "raw_percent": {
+        "any": 72.7,
+        "ge_3_4": 36.4,
+        "ge_4_3": 18.2
+      },
+      "probabilities": {
+        "any": 70.8,
+        "ge_3_4": 37.5,
+        "ge_4_3": 20.8
+      },
+      "note": ""
+    },
+    {
+      "id": "z34_p1_dre",
+      "zinc_group": "3-4",
+      "upsa_group": "1",
+      "clinical_filter": "dre",
+      "clinical_filter_label": "DRE = 1",
+      "n": 5,
+      "events": {
+        "any": 4,
+        "ge_3_4": 4,
+        "ge_4_3": 3
+      },
+      "raw_percent": {
+        "any": 80.0,
+        "ge_3_4": 80.0,
+        "ge_4_3": 60.0
+      },
+      "probabilities": {
+        "any": 75.0,
+        "ge_3_4": 75.0,
+        "ge_4_3": 58.3
+      },
+      "note": "Interpretare con cautela"
+    },
+    {
+      "id": "z34_p1_pirads_psa",
+      "zinc_group": "3-4",
+      "upsa_group": "1",
+      "clinical_filter": "pirads_psa",
+      "clinical_filter_label": "PI-RADS > 3 e PSA > 10",
+      "n": 7,
+      "events": {
+        "any": 5,
+        "ge_3_4": 4,
+        "ge_4_3": 2
+      },
+      "raw_percent": {
+        "any": 71.4,
+        "ge_3_4": 57.1,
+        "ge_4_3": 28.6
+      },
+      "probabilities": {
+        "any": 68.8,
+        "ge_3_4": 56.2,
+        "ge_4_3": 31.2
+      },
+      "note": "Interpretare con cautela"
+    },
+    {
+      "id": "z34_p1_pirads_dre",
+      "zinc_group": "3-4",
+      "upsa_group": "1",
+      "clinical_filter": "pirads_dre",
+      "clinical_filter_label": "PI-RADS > 3 e DRE = 1",
+      "n": 2,
+      "events": {
+        "any": 2,
+        "ge_3_4": 2,
+        "ge_4_3": 2
+      },
+      "raw_percent": {
+        "any": 100,
+        "ge_3_4": 100,
+        "ge_4_3": 100
+      },
+      "probabilities": {
+        "any": 83.3,
+        "ge_3_4": 83.3,
+        "ge_4_3": 83.3
+      },
+      "note": "Molto instabile"
+    },
+    {
+      "id": "z34_p1_dre_psa",
+      "zinc_group": "3-4",
+      "upsa_group": "1",
+      "clinical_filter": "dre_psa",
+      "clinical_filter_label": "DRE = 1 e PSA > 10",
+      "n": 2,
+      "events": {
+        "any": 2,
+        "ge_3_4": 2,
+        "ge_4_3": 0
+      },
+      "raw_percent": {
+        "any": 100,
+        "ge_3_4": 100,
+        "ge_4_3": 0
+      },
+      "probabilities": {
+        "any": 83.3,
+        "ge_3_4": 83.3,
+        "ge_4_3": 16.7
+      },
+      "note": "Molto instabile"
+    },
+    {
+      "id": "z34_p1_pirads_dre_psa",
+      "zinc_group": "3-4",
+      "upsa_group": "1",
+      "clinical_filter": "pirads_dre_psa",
+      "clinical_filter_label": "PI-RADS > 3 e DRE = 1 e PSA > 10",
+      "n": 1,
+      "events": {
+        "any": 1,
+        "ge_3_4": 1,
+        "ge_4_3": 0
+      },
+      "raw_percent": {
+        "any": 100,
+        "ge_3_4": 100,
+        "ge_4_3": 0
+      },
+      "probabilities": {
+        "any": 75.0,
+        "ge_3_4": 75.0,
+        "ge_4_3": 25.0
+      },
+      "note": "Molto instabile"
+    },
+    {
+      "id": "z2_p1_none",
+      "zinc_group": "2",
+      "upsa_group": "1",
+      "clinical_filter": "none",
+      "clinical_filter_label": "Nessun filtro",
+      "n": 11,
+      "events": {
+        "any": 11,
+        "ge_3_4": 8,
+        "ge_4_3": 2
+      },
+      "raw_percent": {
+        "any": 100,
+        "ge_3_4": 72.7,
+        "ge_4_3": 18.2
+      },
+      "probabilities": {
+        "any": 95.8,
+        "ge_3_4": 70.8,
+        "ge_4_3": 20.8
+      },
+      "note": ""
+    },
+    {
+      "id": "z2_p1_pirads",
+      "zinc_group": "2",
+      "upsa_group": "1",
+      "clinical_filter": "pirads",
+      "clinical_filter_label": "PI-RADS > 3",
+      "n": 2,
+      "events": {
+        "any": 2,
+        "ge_3_4": 2,
+        "ge_4_3": 2
+      },
+      "raw_percent": {
+        "any": 100,
+        "ge_3_4": 100,
+        "ge_4_3": 100
+      },
+      "probabilities": {
+        "any": 83.3,
+        "ge_3_4": 83.3,
+        "ge_4_3": 83.3
+      },
+      "note": "Molto instabile"
+    },
+    {
+      "id": "z2_p1_psa",
+      "zinc_group": "2",
+      "upsa_group": "1",
+      "clinical_filter": "psa",
+      "clinical_filter_label": "PSA > 10",
+      "n": 9,
+      "events": {
+        "any": 9,
+        "ge_3_4": 6,
+        "ge_4_3": 1
+      },
+      "raw_percent": {
+        "any": 100,
+        "ge_3_4": 66.7,
+        "ge_4_3": 11.1
+      },
+      "probabilities": {
+        "any": 95.0,
+        "ge_3_4": 65.0,
+        "ge_4_3": 15.0
+      },
+      "note": "Interpretare con cautela"
+    },
+    {
+      "id": "z2_p1_dre",
+      "zinc_group": "2",
+      "upsa_group": "1",
+      "clinical_filter": "dre",
+      "clinical_filter_label": "DRE = 1",
+      "n": 4,
+      "events": {
+        "any": 4,
+        "ge_3_4": 3,
+        "ge_4_3": 1
+      },
+      "raw_percent": {
+        "any": 100,
+        "ge_3_4": 75.0,
+        "ge_4_3": 25.0
+      },
+      "probabilities": {
+        "any": 90.0,
+        "ge_3_4": 70.0,
+        "ge_4_3": 30.0
+      },
+      "note": "Molto instabile"
+    },
+    {
+      "id": "z2_p1_pirads_psa",
+      "zinc_group": "2",
+      "upsa_group": "1",
+      "clinical_filter": "pirads_psa",
+      "clinical_filter_label": "PI-RADS > 3 e PSA > 10",
+      "n": 6,
+      "events": {
+        "any": 6,
+        "ge_3_4": 6,
+        "ge_4_3": 2
+      },
+      "raw_percent": {
+        "any": 100,
+        "ge_3_4": 100,
+        "ge_4_3": 33.3
+      },
+      "probabilities": {
+        "any": 92.9,
+        "ge_3_4": 92.9,
+        "ge_4_3": 35.7
+      },
+      "note": "Interpretare con cautela"
+    },
+    {
+      "id": "z2_p1_pirads_dre",
+      "zinc_group": "2",
+      "upsa_group": "1",
+      "clinical_filter": "pirads_dre",
+      "clinical_filter_label": "PI-RADS > 3 e DRE = 1",
+      "n": 2,
+      "events": {
+        "any": 2,
+        "ge_3_4": 2,
+        "ge_4_3": 1
+      },
+      "raw_percent": {
+        "any": 100,
+        "ge_3_4": 100,
+        "ge_4_3": 50.0
+      },
+      "probabilities": {
+        "any": 83.3,
+        "ge_3_4": 83.3,
+        "ge_4_3": 50.0
+      },
+      "note": "Molto instabile"
+    },
+    {
+      "id": "z2_p1_dre_psa",
+      "zinc_group": "2",
+      "upsa_group": "1",
+      "clinical_filter": "dre_psa",
+      "clinical_filter_label": "DRE = 1 e PSA > 10",
+      "n": 1,
+      "events": {
+        "any": 1,
+        "ge_3_4": 1,
+        "ge_4_3": 1
+      },
+      "raw_percent": {
+        "any": 100,
+        "ge_3_4": 100,
+        "ge_4_3": 100
+      },
+      "probabilities": {
+        "any": 75.0,
+        "ge_3_4": 75.0,
+        "ge_4_3": 75.0
+      },
+      "note": "Molto instabile"
+    },
+    {
+      "id": "z2_p1_pirads_dre_psa",
+      "zinc_group": "2",
+      "upsa_group": "1",
+      "clinical_filter": "pirads_dre_psa",
+      "clinical_filter_label": "PI-RADS > 3 e DRE = 1 e PSA > 10",
+      "n": 2,
+      "events": {
+        "any": 2,
+        "ge_3_4": 1,
+        "ge_4_3": 1
+      },
+      "raw_percent": {
+        "any": 100,
+        "ge_3_4": 50.0,
+        "ge_4_3": 50.0
+      },
+      "probabilities": {
+        "any": 83.3,
+        "ge_3_4": 50.0,
+        "ge_4_3": 50.0
+      },
+      "note": "Molto instabile"
+    },
+    {
+      "id": "z01_p1_none",
+      "zinc_group": "0-1",
+      "upsa_group": "1",
+      "clinical_filter": "none",
+      "clinical_filter_label": "Nessun filtro",
+      "n": 10,
+      "events": {
+        "any": 6,
+        "ge_3_4": 3,
+        "ge_4_3": 0
+      },
+      "raw_percent": {
+        "any": 60.0,
+        "ge_3_4": 30.0,
+        "ge_4_3": 0
+      },
+      "probabilities": {
+        "any": 59.1,
+        "ge_3_4": 31.8,
+        "ge_4_3": 4.5
+      },
+      "note": ""
+    },
+    {
+      "id": "z01_p1_pirads",
+      "zinc_group": "0-1",
+      "upsa_group": "1",
+      "clinical_filter": "pirads",
+      "clinical_filter_label": "PI-RADS > 3",
+      "n": 0,
+      "events": {
+        "any": 0,
+        "ge_3_4": 0,
+        "ge_4_3": 0
+      },
+      "raw_percent": {
+        "any": null,
+        "ge_3_4": null,
+        "ge_4_3": null
+      },
+      "probabilities": {
+        "any": null,
+        "ge_3_4": null,
+        "ge_4_3": null
+      },
+      "note": "Nessun caso"
+    },
+    {
+      "id": "z01_p1_psa",
+      "zinc_group": "0-1",
+      "upsa_group": "1",
+      "clinical_filter": "psa",
+      "clinical_filter_label": "PSA > 10",
+      "n": 4,
+      "events": {
+        "any": 3,
+        "ge_3_4": 2,
+        "ge_4_3": 0
+      },
+      "raw_percent": {
+        "any": 75.0,
+        "ge_3_4": 50.0,
+        "ge_4_3": 0
+      },
+      "probabilities": {
+        "any": 70.0,
+        "ge_3_4": 50.0,
+        "ge_4_3": 10.0
+      },
+      "note": "Molto instabile"
+    },
+    {
+      "id": "z01_p1_dre",
+      "zinc_group": "0-1",
+      "upsa_group": "1",
+      "clinical_filter": "dre",
+      "clinical_filter_label": "DRE = 1",
+      "n": 2,
+      "events": {
+        "any": 1,
+        "ge_3_4": 1,
+        "ge_4_3": 0
+      },
+      "raw_percent": {
+        "any": 50.0,
+        "ge_3_4": 50.0,
+        "ge_4_3": 0
+      },
+      "probabilities": {
+        "any": 50.0,
+        "ge_3_4": 50.0,
+        "ge_4_3": 16.7
+      },
+      "note": "Molto instabile"
+    },
+    {
+      "id": "z01_p1_pirads_psa",
+      "zinc_group": "0-1",
+      "upsa_group": "1",
+      "clinical_filter": "pirads_psa",
+      "clinical_filter_label": "PI-RADS > 3 e PSA > 10",
+      "n": 2,
+      "events": {
+        "any": 2,
+        "ge_3_4": 1,
+        "ge_4_3": 0
+      },
+      "raw_percent": {
+        "any": 100,
+        "ge_3_4": 50.0,
+        "ge_4_3": 0
+      },
+      "probabilities": {
+        "any": 83.3,
+        "ge_3_4": 50.0,
+        "ge_4_3": 16.7
+      },
+      "note": "Molto instabile"
+    },
+    {
+      "id": "z01_p1_pirads_dre",
+      "zinc_group": "0-1",
+      "upsa_group": "1",
+      "clinical_filter": "pirads_dre",
+      "clinical_filter_label": "PI-RADS > 3 e DRE = 1",
+      "n": 0,
+      "events": {
+        "any": 0,
+        "ge_3_4": 0,
+        "ge_4_3": 0
+      },
+      "raw_percent": {
+        "any": null,
+        "ge_3_4": null,
+        "ge_4_3": null
+      },
+      "probabilities": {
+        "any": null,
+        "ge_3_4": null,
+        "ge_4_3": null
+      },
+      "note": "Nessun caso"
+    },
+    {
+      "id": "z01_p1_dre_psa",
+      "zinc_group": "0-1",
+      "upsa_group": "1",
+      "clinical_filter": "dre_psa",
+      "clinical_filter_label": "DRE = 1 e PSA > 10",
+      "n": 0,
+      "events": {
+        "any": 0,
+        "ge_3_4": 0,
+        "ge_4_3": 0
+      },
+      "raw_percent": {
+        "any": null,
+        "ge_3_4": null,
+        "ge_4_3": null
+      },
+      "probabilities": {
+        "any": null,
+        "ge_3_4": null,
+        "ge_4_3": null
+      },
+      "note": "Nessun caso"
+    },
+    {
+      "id": "z01_p1_pirads_dre_psa",
+      "zinc_group": "0-1",
+      "upsa_group": "1",
+      "clinical_filter": "pirads_dre_psa",
+      "clinical_filter_label": "PI-RADS > 3 e DRE = 1 e PSA > 10",
+      "n": 1,
+      "events": {
+        "any": 1,
+        "ge_3_4": 1,
+        "ge_4_3": 0
+      },
+      "raw_percent": {
+        "any": 100,
+        "ge_3_4": 100,
+        "ge_4_3": 0
+      },
+      "probabilities": {
+        "any": 75.0,
+        "ge_3_4": 75.0,
+        "ge_4_3": 25.0
+      },
+      "note": "Molto instabile"
+    },
+    {
+      "id": "z34_p0_none",
+      "zinc_group": "3-4",
+      "upsa_group": "0",
+      "clinical_filter": "none",
+      "clinical_filter_label": "Nessun filtro",
+      "n": 24,
+      "events": {
+        "any": 14,
+        "ge_3_4": 7,
+        "ge_4_3": 5
+      },
+      "raw_percent": {
+        "any": 58.3,
+        "ge_3_4": 29.2,
+        "ge_4_3": 20.8
+      },
+      "probabilities": {
+        "any": 58.0,
+        "ge_3_4": 30.0,
+        "ge_4_3": 22.0
+      },
+      "note": ""
+    },
+    {
+      "id": "z34_p0_pirads",
+      "zinc_group": "3-4",
+      "upsa_group": "0",
+      "clinical_filter": "pirads",
+      "clinical_filter_label": "PI-RADS > 3",
+      "n": 5,
+      "events": {
+        "any": 5,
+        "ge_3_4": 5,
+        "ge_4_3": 2
+      },
+      "raw_percent": {
+        "any": 100,
+        "ge_3_4": 100,
+        "ge_4_3": 40.0
+      },
+      "probabilities": {
+        "any": 91.7,
+        "ge_3_4": 91.7,
+        "ge_4_3": 41.7
+      },
+      "note": "Interpretare con cautela"
+    },
+    {
+      "id": "z34_p0_psa",
+      "zinc_group": "3-4",
+      "upsa_group": "0",
+      "clinical_filter": "psa",
+      "clinical_filter_label": "PSA > 10",
+      "n": 10,
+      "events": {
+        "any": 8,
+        "ge_3_4": 3,
+        "ge_4_3": 2
+      },
+      "raw_percent": {
+        "any": 80.0,
+        "ge_3_4": 30.0,
+        "ge_4_3": 20.0
+      },
+      "probabilities": {
+        "any": 77.3,
+        "ge_3_4": 31.8,
+        "ge_4_3": 22.7
+      },
+      "note": ""
+    },
+    {
+      "id": "z34_p0_dre",
+      "zinc_group": "3-4",
+      "upsa_group": "0",
+      "clinical_filter": "dre",
+      "clinical_filter_label": "DRE = 1",
+      "n": 7,
+      "events": {
+        "any": 4,
+        "ge_3_4": 2,
+        "ge_4_3": 3
+      },
+      "raw_percent": {
+        "any": 57.1,
+        "ge_3_4": 28.6,
+        "ge_4_3": 42.9
+      },
+      "probabilities": {
+        "any": 56.2,
+        "ge_3_4": 31.2,
+        "ge_4_3": 43.8
+      },
+      "note": "Interpretare con cautela"
+    },
+    {
+      "id": "z34_p0_pirads_psa",
+      "zinc_group": "3-4",
+      "upsa_group": "0",
+      "clinical_filter": "pirads_psa",
+      "clinical_filter_label": "PI-RADS > 3 e PSA > 10",
+      "n": 9,
+      "events": {
+        "any": 6,
+        "ge_3_4": 5,
+        "ge_4_3": 2
+      },
+      "raw_percent": {
+        "any": 66.7,
+        "ge_3_4": 55.6,
+        "ge_4_3": 22.2
+      },
+      "probabilities": {
+        "any": 65.0,
+        "ge_3_4": 55.0,
+        "ge_4_3": 25.0
+      },
+      "note": "Interpretare con cautela"
+    },
+    {
+      "id": "z34_p0_pirads_dre",
+      "zinc_group": "3-4",
+      "upsa_group": "0",
+      "clinical_filter": "pirads_dre",
+      "clinical_filter_label": "PI-RADS > 3 e DRE = 1",
+      "n": 2,
+      "events": {
+        "any": 2,
+        "ge_3_4": 2,
+        "ge_4_3": 2
+      },
+      "raw_percent": {
+        "any": 100,
+        "ge_3_4": 100,
+        "ge_4_3": 100
+      },
+      "probabilities": {
+        "any": 83.3,
+        "ge_3_4": 83.3,
+        "ge_4_3": 83.3
+      },
+      "note": "Molto instabile"
+    },
+    {
+      "id": "z34_p0_dre_psa",
+      "zinc_group": "3-4",
+      "upsa_group": "0",
+      "clinical_filter": "dre_psa",
+      "clinical_filter_label": "DRE = 1 e PSA > 10",
+      "n": 2,
+      "events": {
+        "any": 2,
+        "ge_3_4": 2,
+        "ge_4_3": 0
+      },
+      "raw_percent": {
+        "any": 100,
+        "ge_3_4": 100,
+        "ge_4_3": 0
+      },
+      "probabilities": {
+        "any": 83.3,
+        "ge_3_4": 83.3,
+        "ge_4_3": 16.7
+      },
+      "note": "Molto instabile"
+    },
+    {
+      "id": "z34_p0_pirads_dre_psa",
+      "zinc_group": "3-4",
+      "upsa_group": "0",
+      "clinical_filter": "pirads_dre_psa",
+      "clinical_filter_label": "PI-RADS > 3 e DRE = 1 e PSA > 10",
+      "n": 1,
+      "events": {
+        "any": 1,
+        "ge_3_4": 0,
+        "ge_4_3": 0
+      },
+      "raw_percent": {
+        "any": 100,
+        "ge_3_4": 0,
+        "ge_4_3": 0
+      },
+      "probabilities": {
+        "any": 75.0,
+        "ge_3_4": 25.0,
+        "ge_4_3": 25.0
+      },
+      "note": "Molto instabile"
+    },
+    {
+      "id": "z2_p0_none",
+      "zinc_group": "2",
+      "upsa_group": "0",
+      "clinical_filter": "none",
+      "clinical_filter_label": "Nessun filtro",
+      "n": 24,
+      "events": {
+        "any": 10,
+        "ge_3_4": 3,
+        "ge_4_3": 1
+      },
+      "raw_percent": {
+        "any": 41.7,
+        "ge_3_4": 12.5,
+        "ge_4_3": 4.2
+      },
+      "probabilities": {
+        "any": 42.0,
+        "ge_3_4": 14.0,
+        "ge_4_3": 6.0
+      },
+      "note": ""
+    },
+    {
+      "id": "z2_p0_pirads",
+      "zinc_group": "2",
+      "upsa_group": "0",
+      "clinical_filter": "pirads",
+      "clinical_filter_label": "PI-RADS > 3",
+      "n": 1,
+      "events": {
+        "any": 1,
+        "ge_3_4": 1,
+        "ge_4_3": 1
+      },
+      "raw_percent": {
+        "any": 100,
+        "ge_3_4": 100,
+        "ge_4_3": 100
+      },
+      "probabilities": {
+        "any": 75.0,
+        "ge_3_4": 75.0,
+        "ge_4_3": 75.0
+      },
+      "note": "Molto instabile"
+    },
+    {
+      "id": "z2_p0_psa",
+      "zinc_group": "2",
+      "upsa_group": "0",
+      "clinical_filter": "psa",
+      "clinical_filter_label": "PSA > 10",
+      "n": 13,
+      "events": {
+        "any": 10,
+        "ge_3_4": 3,
+        "ge_4_3": 1
+      },
+      "raw_percent": {
+        "any": 76.9,
+        "ge_3_4": 23.1,
+        "ge_4_3": 7.7
+      },
+      "probabilities": {
+        "any": 75.0,
+        "ge_3_4": 25.0,
+        "ge_4_3": 10.7
+      },
+      "note": ""
+    },
+    {
+      "id": "z2_p0_dre",
+      "zinc_group": "2",
+      "upsa_group": "0",
+      "clinical_filter": "dre",
+      "clinical_filter_label": "DRE = 1",
+      "n": 6,
+      "events": {
+        "any": 4,
+        "ge_3_4": 1,
+        "ge_4_3": 0
+      },
+      "raw_percent": {
+        "any": 66.7,
+        "ge_3_4": 16.7,
+        "ge_4_3": 0
+      },
+      "probabilities": {
+        "any": 64.3,
+        "ge_3_4": 21.4,
+        "ge_4_3": 7.1
+      },
+      "note": "Interpretare con cautela"
+    },
+    {
+      "id": "z2_p0_pirads_psa",
+      "zinc_group": "2",
+      "upsa_group": "0",
+      "clinical_filter": "pirads_psa",
+      "clinical_filter_label": "PI-RADS > 3 e PSA > 10",
+      "n": 11,
+      "events": {
+        "any": 4,
+        "ge_3_4": 1,
+        "ge_4_3": 1
+      },
+      "raw_percent": {
+        "any": 36.4,
+        "ge_3_4": 9.1,
+        "ge_4_3": 9.1
+      },
+      "probabilities": {
+        "any": 37.5,
+        "ge_3_4": 12.5,
+        "ge_4_3": 12.5
+      },
+      "note": ""
+    },
+    {
+      "id": "z2_p0_pirads_dre",
+      "zinc_group": "2",
+      "upsa_group": "0",
+      "clinical_filter": "pirads_dre",
+      "clinical_filter_label": "PI-RADS > 3 e DRE = 1",
+      "n": 1,
+      "events": {
+        "any": 1,
+        "ge_3_4": 1,
+        "ge_4_3": 1
+      },
+      "raw_percent": {
+        "any": 100,
+        "ge_3_4": 100,
+        "ge_4_3": 100
+      },
+      "probabilities": {
+        "any": 75.0,
+        "ge_3_4": 75.0,
+        "ge_4_3": 75.0
+      },
+      "note": "Molto instabile"
+    },
+    {
+      "id": "z2_p0_dre_psa",
+      "zinc_group": "2",
+      "upsa_group": "0",
+      "clinical_filter": "dre_psa",
+      "clinical_filter_label": "DRE = 1 e PSA > 10",
+      "n": 1,
+      "events": {
+        "any": 1,
+        "ge_3_4": 1,
+        "ge_4_3": 1
+      },
+      "raw_percent": {
+        "any": 100,
+        "ge_3_4": 100,
+        "ge_4_3": 100
+      },
+      "probabilities": {
+        "any": 75.0,
+        "ge_3_4": 75.0,
+        "ge_4_3": 75.0
+      },
+      "note": "Molto instabile"
+    },
+    {
+      "id": "z2_p0_pirads_dre_psa",
+      "zinc_group": "2",
+      "upsa_group": "0",
+      "clinical_filter": "pirads_dre_psa",
+      "clinical_filter_label": "PI-RADS > 3 e DRE = 1 e PSA > 10",
+      "n": 5,
+      "events": {
+        "any": 4,
+        "ge_3_4": 1,
+        "ge_4_3": 1
+      },
+      "raw_percent": {
+        "any": 80.0,
+        "ge_3_4": 20.0,
+        "ge_4_3": 20.0
+      },
+      "probabilities": {
+        "any": 75.0,
+        "ge_3_4": 25.0,
+        "ge_4_3": 25.0
+      },
+      "note": "Interpretare con cautela"
+    },
+    {
+      "id": "z01_p0_none",
+      "zinc_group": "0-1",
+      "upsa_group": "0",
+      "clinical_filter": "none",
+      "clinical_filter_label": "Nessun filtro",
+      "n": 58,
+      "events": {
+        "any": 15,
+        "ge_3_4": 3,
+        "ge_4_3": 1
+      },
+      "raw_percent": {
+        "any": 25.9,
+        "ge_3_4": 5.2,
+        "ge_4_3": 1.7
+      },
+      "probabilities": {
+        "any": 26.3,
+        "ge_3_4": 5.9,
+        "ge_4_3": 2.5
+      },
+      "note": ""
+    },
+    {
+      "id": "z01_p0_pirads",
+      "zinc_group": "0-1",
+      "upsa_group": "0",
+      "clinical_filter": "pirads",
+      "clinical_filter_label": "PI-RADS > 3",
+      "n": 1,
+      "events": {
+        "any": 1,
+        "ge_3_4": 1,
+        "ge_4_3": 1
+      },
+      "raw_percent": {
+        "any": 100,
+        "ge_3_4": 100,
+        "ge_4_3": 100
+      },
+      "probabilities": {
+        "any": 75.0,
+        "ge_3_4": 75.0,
+        "ge_4_3": 75.0
+      },
+      "note": "Molto instabile"
+    },
+    {
+      "id": "z01_p0_psa",
+      "zinc_group": "0-1",
+      "upsa_group": "0",
+      "clinical_filter": "psa",
+      "clinical_filter_label": "PSA > 10",
+      "n": 28,
+      "events": {
+        "any": 9,
+        "ge_3_4": 2,
+        "ge_4_3": 1
+      },
+      "raw_percent": {
+        "any": 32.1,
+        "ge_3_4": 7.1,
+        "ge_4_3": 3.6
+      },
+      "probabilities": {
+        "any": 32.8,
+        "ge_3_4": 8.6,
+        "ge_4_3": 5.2
+      },
+      "note": ""
+    },
+    {
+      "id": "z01_p0_dre",
+      "zinc_group": "0-1",
+      "upsa_group": "0",
+      "clinical_filter": "dre",
+      "clinical_filter_label": "DRE = 1",
+      "n": 13,
+      "events": {
+        "any": 5,
+        "ge_3_4": 2,
+        "ge_4_3": 0
+      },
+      "raw_percent": {
+        "any": 38.5,
+        "ge_3_4": 15.4,
+        "ge_4_3": 0
+      },
+      "probabilities": {
+        "any": 39.3,
+        "ge_3_4": 17.9,
+        "ge_4_3": 3.6
+      },
+      "note": ""
+    },
+    {
+      "id": "z01_p0_pirads_psa",
+      "zinc_group": "0-1",
+      "upsa_group": "0",
+      "clinical_filter": "pirads_psa",
+      "clinical_filter_label": "PI-RADS > 3 e PSA > 10",
+      "n": 7,
+      "events": {
+        "any": 1,
+        "ge_3_4": 1,
+        "ge_4_3": 1
+      },
+      "raw_percent": {
+        "any": 14.3,
+        "ge_3_4": 14.3,
+        "ge_4_3": 14.3
+      },
+      "probabilities": {
+        "any": 18.8,
+        "ge_3_4": 18.8,
+        "ge_4_3": 18.8
+      },
+      "note": "Interpretare con cautela"
+    },
+    {
+      "id": "z01_p0_pirads_dre",
+      "zinc_group": "0-1",
+      "upsa_group": "0",
+      "clinical_filter": "pirads_dre",
+      "clinical_filter_label": "PI-RADS > 3 e DRE = 1",
+      "n": 1,
+      "events": {
+        "any": 1,
+        "ge_3_4": 1,
+        "ge_4_3": 1
+      },
+      "raw_percent": {
+        "any": 100,
+        "ge_3_4": 100,
+        "ge_4_3": 100
+      },
+      "probabilities": {
+        "any": 75.0,
+        "ge_3_4": 75.0,
+        "ge_4_3": 75.0
+      },
+      "note": "Molto instabile"
+    },
+    {
+      "id": "z01_p0_dre_psa",
+      "zinc_group": "0-1",
+      "upsa_group": "0",
+      "clinical_filter": "dre_psa",
+      "clinical_filter_label": "DRE = 1 e PSA > 10",
+      "n": 1,
+      "events": {
+        "any": 1,
+        "ge_3_4": 1,
+        "ge_4_3": 1
+      },
+      "raw_percent": {
+        "any": 100,
+        "ge_3_4": 100,
+        "ge_4_3": 100
+      },
+      "probabilities": {
+        "any": 75.0,
+        "ge_3_4": 75.0,
+        "ge_4_3": 75.0
+      },
+      "note": "Molto instabile"
+    },
+    {
+      "id": "z01_p0_pirads_dre_psa",
+      "zinc_group": "0-1",
+      "upsa_group": "0",
+      "clinical_filter": "pirads_dre_psa",
+      "clinical_filter_label": "PI-RADS > 3 e DRE = 1 e PSA > 10",
+      "n": 4,
+      "events": {
+        "any": 2,
+        "ge_3_4": 1,
+        "ge_4_3": 1
+      },
+      "raw_percent": {
+        "any": 50.0,
+        "ge_3_4": 25.0,
+        "ge_4_3": 25.0
+      },
+      "probabilities": {
+        "any": 50.0,
+        "ge_3_4": 30.0,
+        "ge_4_3": 30.0
+      },
+      "note": "Molto instabile"
+    }
+  ]
+}

@@ -63,6 +63,7 @@ def create_database_tables() -> None:
         QmsProduct,
         QmsQcRecord,
     )
+    from risk_models import RiskProbabilityRow
 
     # Silence linters while keeping the model-registration imports explicit.
     _ = (
@@ -72,6 +73,7 @@ def create_database_tables() -> None:
         QmsLotRelationship,
         QmsProduct,
         QmsQcRecord,
+        RiskProbabilityRow,
     )
 
     Base.metadata.create_all(bind=engine)
@@ -80,6 +82,8 @@ def create_database_tables() -> None:
         from qms_service import seed_qms_master_data
 
         seed_qms_master_data(session)
+        from risk_router import seed_risk_probability_matrix
+        seed_risk_probability_matrix(session)
 
     if not DATABASE_URL.startswith("sqlite"):
         migrate_record_classification_columns()
