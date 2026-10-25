@@ -1,0 +1,482 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <meta name="theme-color" content="#ffffff">
+    <title>ZENPSA Reader</title>
+    <link rel="stylesheet" href="css/style.css?v=step1">
+    <link rel="stylesheet" href="css/purpose-panel.css?v=purpose-1">
+    <link rel="stylesheet" href="css/live-camera-indicators.css?v=live-camera-1"
+>
+    <link rel="stylesheet" href="css/roi-editor.css?v=roi-canvas-2">
+
+    <style id="reader-clean-ui">
+        :root { --zenpsa-orange: #F26522; --zenpsa-orange-dark: #d94f13; }
+        .brand-block h1 { color: var(--zenpsa-orange); margin-bottom: 0; }
+        .brand-block p { display: none !important; }
+        .menu-button { color: var(--zenpsa-orange) !important; border-color: var(--zenpsa-orange) !important; }
+        .menu-button:hover, .menu-button:focus-visible { background: rgba(242,101,34,.10) !important; }
+        #acquisitionPurposePanel .section-heading p { display: none !important; }
+        #classificationNotes { display: none !important; }
+        .reader-actions { display: grid; gap: 12px; margin: 16px 0; }
+        .capture-main { width: 100%; min-height: 54px; font-size: 1.05rem; }
+        .reader-actions-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
+        .action-tile { width: 100%; aspect-ratio: 1.4 / 1; min-height: 82px; padding: 12px 8px; display: flex; align-items: center; justify-content: center; text-align: center; line-height: 1.2; white-space: normal; border-color: var(--zenpsa-orange); color: var(--zenpsa-orange-dark); }
+        .action-tile:not(:disabled):hover, .action-tile:not(:disabled):focus-visible { background: rgba(242,101,34,.10); }
+        #statusPanel, .result-panel, #qualityPanel { display: none !important; }
+        @media (max-width: 360px) { .reader-actions-grid { gap: 9px; } .action-tile { min-height: 74px; font-size: .9rem; } }
+
+        .upsa-concordance { margin-top: 4px; padding: 15px; border: 2px solid #aeb8c2; border-radius: 12px; background: #f4f6f8; transition: background-color .2s, border-color .2s; }
+        .concordance-heading { display: flex; justify-content: space-between; gap: 12px; align-items: flex-start; }
+        .concordance-heading h3 { margin: 3px 0 0; font-size: 1rem; }
+        .concordance-kicker { color: #5d6874; font-size: .72rem; font-weight: 800; letter-spacing: .08em; }
+        #upsaConcordanceBadge { padding: 6px 9px; border-radius: 999px; background: rgba(255,255,255,.75); white-space: nowrap; font-size: .78rem; }
+        .upsa-concordance p { margin: 12px 0 0; }
+        .concordance-metrics { display: grid; grid-template-columns: repeat(2,minmax(0,1fr)); gap: 8px; margin-top: 12px; }
+        .concordance-metrics div { padding: 9px; border-radius: 8px; background: rgba(255,255,255,.72); }
+        .concordance-metrics span { display: block; color: #5d6874; font-size: .76rem; }
+        .concordance-metrics strong { display: block; margin-top: 3px; font-size: .92rem; }
+        .concordance-high { background: #e9f7ee; border-color: #49a56d; }
+        .concordance-medium { background: #fff7d6; border-color: #d6a817; }
+        .concordance-low { background: #fdebea; border-color: #ce5b52; }
+        .concordance-not-evaluable, .concordance-neutral { background: #f1f4f6; border-color: #9ca8b3; }
+        @media (max-width: 560px) { .concordance-heading { display: grid; } .concordance-metrics { grid-template-columns: 1fr; } }
+    </style>
+</head>
+<body>
+    <main class="app">
+        <header class="topbar">
+            <div class="brand-block">
+                <h1>ZenPSA Reader</h1>
+                
+            </div>
+            <nav class="app-menu" aria-label="Navigazione principale">
+                <button id="menuButton" class="menu-button" type="button" aria-expanded="false" aria-controls="menuPanel">☰</button>
+                <div id="menuPanel" class="menu-panel hidden">
+                    <a class="menu-link active" href="index.html" aria-current="page">Reader</a>
+                    <a class="menu-link" href="dashboard.html">Dashboard</a>
+                    <a class="menu-link" href="risk-calc.html">Risk Calc</a>
+                    <a class="menu-link" href="qms-lots.html">QMS</a>
+                </div>
+            </nav>
+        </header>
+
+        <section id="systemMessage" class="system-message info" aria-live="polite">Inizializzazione della fotocamera...</section>
+
+
+
+<section
+    id="acquisitionPurposePanel"
+    class="panel purpose-panel"
+>
+    <div class="section-heading">
+        <div>
+            <h2>Tipo di acquisizione</h2>
+
+
+        </div>
+    </div>
+
+    <label class="form-field form-field-full">
+        <span>Destinazione *</span>
+
+        <select id="recordPurpose" required>
+            <option value="">
+                Seleziona...
+            </option>
+
+            <option value="clinical">
+                Test reale
+            </option>
+
+            <option value="research">
+                R&amp;D
+            </option>
+
+            <option value="calibration">
+                Calibrazione
+            </option>
+        </select>
+    </label>
+
+    <div
+        id="researchFields"
+        class="purpose-fields hidden"
+    >
+        <label class="form-field">
+            <span>
+                Codice studio/prova R&amp;D *
+            </span>
+
+            <input
+                id="studyCode"
+                type="text"
+                maxlength="80"
+                placeholder="Es. RND-2026-001"
+            >
+        </label>
+    </div>
+
+    <div
+        id="calibrationFields"
+        class="purpose-fields hidden"
+    >
+        <label class="form-field">
+            <span>Codice calibrazione *</span>
+
+            <input
+                id="calibrationCode"
+                type="text"
+                maxlength="80"
+                placeholder="Es. CAL-ZINC-2026-001"
+            >
+        </label>
+
+        <label class="form-field">
+            <span>Analita *</span>
+
+            <select id="calibrationAnalyte">
+                <option value="">
+                    Seleziona...
+                </option>
+
+                <option value="uzinc">
+                    uZinc
+                </option>
+
+                <option value="upsa">
+                    uPSA
+                </option>
+            </select>
+        </label>
+
+        <label class="form-field">
+            <span>
+                Concentrazione nominale (µg/mL) *
+            </span>
+
+            <input
+                id="nominalConcentration"
+                type="number"
+                min="0"
+                step="0.000001"
+                inputmode="decimal"
+            >
+        </label>
+
+        <label class="form-field">
+            <span>Numero replicato *</span>
+
+            <input
+                id="replicateNumber"
+                type="number"
+                min="1"
+                step="1"
+                inputmode="numeric"
+            >
+        </label>
+    </div>
+
+    <textarea id="classificationNotes" class="hidden" aria-hidden="true"></textarea>
+
+</section>
+
+<section class="camera-section">
+    <div
+        id="cameraContainer"
+        class="camera-container"
+    >
+        <video
+            id="video"
+            autoplay
+            playsinline
+            muted
+        ></video>
+
+        <div
+            id="cameraGuide"
+            class="camera-guide"
+            aria-hidden="true"
+        ></div>
+
+        <img
+            id="overlay"
+            src="assets/test-outline.svg"
+            alt=""
+            aria-hidden="true"
+        >
+
+        <!-- Indicatori live sul bordo superiore del video -->
+        <div
+            class="camera-live-indicators"
+            aria-label="Controlli live di luce, torcia e fuoco"
+        >
+            <div
+                id="cameraLightIndicator"
+                class="camera-live-indicator is-warning"
+            >
+                <span
+                    class="camera-live-dot"
+                    aria-hidden="true"
+                ></span>
+
+                <span class="camera-live-label">
+                    Luce
+                </span>
+
+                <strong id="cameraLightValue">
+                    ...
+                </strong>
+            </div>
+
+            <div
+                id="cameraTorchIndicator"
+                class="camera-live-indicator is-off"
+            >
+                <span
+                    class="camera-live-dot"
+                    aria-hidden="true"
+                ></span>
+
+                <span class="camera-live-label">
+                    Torcia
+                </span>
+
+                <strong id="cameraTorchValue">
+                    Spenta
+                </strong>
+            </div>
+
+            <div
+                id="cameraFocusIndicator"
+                class="camera-live-indicator is-warning"
+            >
+                <span
+                    class="camera-live-dot"
+                    aria-hidden="true"
+                ></span>
+
+                <span class="camera-live-label">
+                    Fuoco
+                </span>
+
+                <strong id="cameraFocusValue">
+                    ...
+                </strong>
+            </div>
+        </div>
+
+        <div
+            id="stabilityBadge"
+            class="stability-badge"
+        >
+            Posiziona il test nella sagoma
+        </div>
+    </div>
+</section>
+
+        <section class="reader-actions" aria-label="Comandi acquisizione">
+            <button id="captureBtn" class="primary-button capture-main" type="button" disabled>Scatta e analizza</button>
+            <div class="reader-actions-grid">
+                <button id="nativeCameraBtn" class="secondary-button action-tile" type="button">Usa fotocamera</button>
+                <button id="torchBtn" class="secondary-button action-tile" type="button" disabled>Attiva torcia</button>
+                <button id="openRoiEditorBtn" class="secondary-button action-tile" type="button" disabled>Apri editor</button>
+                <button id="saveImageBtn" class="secondary-button action-tile" type="button" disabled>Salva immagine</button>
+            </div>
+        </section>
+        <input type="file" id="nativeCamera" accept="image/*" capture="environment" hidden>
+
+        <section id="loadingPanel" class="loading-panel hidden" aria-live="polite">
+            <div class="spinner"></div>
+            <p id="loadingText">Acquisizione in corso...</p>
+        </section>
+
+        <section id="previewSection" class="panel preview-section hidden">
+            <h2>Immagine acquisita</h2>
+            <img id="preview" alt="Immagine del test acquisita">
+        </section>
+
+        <section id="statusPanel" class="panel status-panel">
+            <div id="cameraStatus" class="status-row pending">Fotocamera in inizializzazione</div>
+            <div id="alignmentStatus" class="status-row pending">Allineamento assistito dalla maschera</div>
+            <div id="lightStatus" class="status-row pending">Illuminazione non verificata</div>
+            <div id="focusStatus" class="status-row pending">Fuoco non verificato</div>
+            <div id="glareStatus" class="status-row pending">Riflessi non verificati</div>
+        </section>
+
+        <section class="panel result-panel">
+            <h2>Risultato</h2>
+            <pre id="result">In attesa dello scatto...</pre>
+        </section>
+
+            <section id="qualityPanel" class="panel quality-panel">
+            <div><span>Luminosità</span><strong id="brightnessValue">-</strong></div>
+            <div><span>Nitidezza</span><strong id="sharpnessValue">-</strong></div>
+            <div><span>Allineamento</span><strong id="alignmentValue">Guida visiva</strong></div>
+            <div><span>Riflessi</span><strong id="glareValue">-</strong></div>
+            <div><span>Risoluzione acquisita</span><strong id="resolutionValue">-</strong></div>
+            <div><span>Modalità di acquisizione</span><strong id="captureModeValue">-</strong></div>
+            <div><span>Torcia</span><strong id="torchValue">-</strong></div>
+        </section>
+
+        <footer class="development-note">Versione prototipale per sviluppo e validazione tecnica. Non utilizzare per decisioni cliniche.</footer>
+    </main>
+
+    <dialog id="roiReviewDialog" class="roi-dialog">
+      <div class="roi-editor">
+        <div class="roi-editor-header"><h2>Verifica aree di analisi</h2><p>Trascina le sagome fisse per centrarle sulle finestre A e C.</p></div>
+        <div class="roi-quadrants">
+          <section class="roi-quadrant"><h3>Zoom finestra A</h3><div class="roi-stage-wrap"><div id="roiStageA" class="roi-stage roi-stage-a"><canvas id="roiCanvasA" aria-label="Zoom finestra A"></canvas><div id="roiA" class="roi-shape roi-a" data-roi="A"><span class="roi-label">A</span></div></div></div></section>
+          <section class="roi-quadrant"><h3>Zoom finestra C</h3><div class="roi-stage-wrap"><div id="roiStageC" class="roi-stage roi-stage-c"><canvas id="roiCanvasC" aria-label="Zoom finestra C"></canvas><div id="roiC" class="roi-shape roi-c" data-roi="C"><span class="roi-label">C</span></div></div></div></section>
+        </div>
+        <p id="roiMessage" class="roi-message info" aria-live="polite"></p>
+        <div class="roi-actions"><button id="roiRetakeBtn" class="secondary-button" type="button">Ripeti scatto</button><button id="roiResetBtn" class="secondary-button" type="button">Ripristina posizioni</button><button id="roiConfirmBtn" class="primary-button" type="button">Conferma aree e continua</button></div>
+      </div>
+    </dialog>
+    <dialog id="saveDialog" class="save-dialog">
+        <form id="saveForm" class="save-form" method="dialog" novalidate>
+            <div class="dialog-header">
+                <div>
+                    <h2>Salva immagine e dati</h2>
+                    <p>I campi contrassegnati con * sono obbligatori. Gli altri dati sono opzionali.</p>
+                </div>
+                <button id="cancelSaveBtn" class="icon-button" type="button" aria-label="Chiudi">×</button>
+            </div>
+
+            <label class="form-field form-field-full">
+                <span>Codice soggetto/campione *</span>
+                <input id="sampleCode" name="sampleCode" type="text" maxlength="50" required autocomplete="off" placeholder="Es. P001">
+            </label>
+
+            <label class="form-field form-field-full">
+                <span>Lotto ZenPSA Pro *</span>
+                <select id="testLotId" name="testLotId" required>
+                    <option value="">Caricamento lotti...</option>
+                </select>
+                <small id="testLotHelp">Seleziona il Lot Record LR-000198 riportato sulla confezione.</small>
+            </label>
+
+            <div class="form-grid">
+                <label class="form-field">
+                    <span>Volume urina raccolta (mL) *</span>
+                    <input id="urineVolume" name="urineVolume" type="number" min="1" max="2000" step="0.1" inputmode="decimal" required>
+                </label>
+
+                <label class="form-field">
+                    <span>Fase del percorso clinico *</span>
+                    <select id="clinicalPathway" name="clinicalPathway" required>
+                        <option value="">Seleziona...</option>
+                        <option value="check_up">Check-up</option>
+                        <option value="pre_mri">Pre-MRI</option>
+                        <option value="pre_biopsy">Pre-biopsia</option>
+                        <option value="active_surveillance">Sorveglianza attiva</option>
+                    </select>
+                </label>
+
+                <label class="form-field">
+                    <span>Lettura ottica zinco (0-4) *</span>
+                    <select id="opticalZincScore" name="opticalZincScore" required>
+                        <option value="">Seleziona...</option>
+                        <option value="0">0</option><option value="1">1</option><option value="2">2</option><option value="3">3</option><option value="4">4</option>
+                    </select>
+                </label>
+
+                <label class="form-field">
+                    <span>Lettura ottica PSA (0-4) *</span>
+                    <select id="opticalPsaScore" name="opticalPsaScore" required>
+                        <option value="">Seleziona...</option>
+                        <option value="0">0</option><option value="1">1</option><option value="2">2</option><option value="3">3</option><option value="4">4</option>
+                    </select>
+                </label>
+                <section id="upsaConcordanceBox" class="upsa-concordance concordance-neutral form-field-full" aria-live="polite">
+                    <div class="concordance-heading">
+                        <div><span class="concordance-kicker">CONTROLLO LETTURA</span><h3>Concordanza uPSA ottica-digitale</h3></div>
+                        <strong id="upsaConcordanceBadge">In attesa</strong>
+                    </div>
+                    <p id="upsaConcordanceMessage">Seleziona la lettura ottica uPSA per confrontarla con l'analisi digitale.</p>
+                    <div id="upsaConcordanceMetrics" class="concordance-metrics hidden"></div>
+                </section>
+
+                <label class="form-field">
+                    <span>Età</span>
+                    <input id="subjectAge" name="subjectAge" type="number" min="18" max="120" step="1" inputmode="numeric">
+                </label>
+
+                <label class="form-field">
+                    <span>PSA sierico (ng/mL)</span>
+                    <input id="serumPsa" name="serumPsa" type="number" min="0" max="10000" step="0.01" inputmode="decimal">
+                </label>
+
+                <label class="form-field">
+                    <span>Esito DRE</span>
+                    <select id="dreResult" name="dreResult">
+                        <option value="">Non disponibile</option>
+                        <option value="not_suspicious">Non sospetta</option>
+                        <option value="suspicious">Sospetta</option>
+                        <option value="indeterminate">Indeterminata</option>
+                    </select>
+                </label>
+
+                <label class="form-field">
+                    <span>PI-RADS</span>
+                    <select id="pirads" name="pirads">
+                        <option value="">Non disponibile</option>
+                        <option value="1">1</option><option value="2">2</option><option value="3">3</option><option value="4">4</option><option value="5">5</option>
+                    </select>
+                </label>
+
+                <label class="form-field">
+                    <span>Volume prostatico (mL)</span>
+                    <input id="prostateVolume" name="prostateVolume" type="number" min="0.1" max="1000" step="0.1" inputmode="decimal">
+                </label>
+
+                <label class="form-field">
+                    <span>Gleason Score</span>
+                    <select id="gleasonScore" name="gleasonScore">
+                        <option value="">Non disponibile</option>
+                        <option value="6">6</option>
+                        <option value="7_3_plus_4">7 (3+4)</option>
+                        <option value="7_4_plus_3">7 (4+3)</option>
+                        <option value="8">8</option>
+                        <option value="9">9</option>
+                        <option value="10">10</option>
+                    </select>
+                </label>
+            </div>
+
+            <p id="saveFormError" class="form-error hidden" role="alert"></p>
+
+            <div class="dialog-actions">
+                <button class="secondary-button" type="button" onclick="closeSaveDialog()">Annulla</button>
+                <button class="primary-button" type="submit">Salva immagine e record</button>
+            </div>
+        </form>
+    </dialog>
+
+    <script>
+        const menuButton = document.getElementById("menuButton");
+        const menuPanel = document.getElementById("menuPanel");
+        menuButton.addEventListener("click", function () {
+            const opening = menuPanel.classList.contains("hidden");
+            menuPanel.classList.toggle("hidden");
+            menuButton.setAttribute("aria-expanded", opening ? "true" : "false");
+        });
+    </script>
+    <script src="js/imageQuality.js"></script>
+    <script src="js/overlay.js"></script>
+    <script src="js/alignment.js"></script>
+    <script src="js/camera.js"></script>
+    <script src="js/quality.js?v=step1"></script>
+    <script src="js/liveCameraIndicators.js?v=live-camera-2"></script>
+    <script src="js/api.js"></script>
+    <script src="js/roiEditor.js?v=roi-stable-20261025"></script>
+    <script src="js/archiveCrop.js?v=dual-crop-1"></script>
+    <script src="js/recordsApi.js?v=backend-1"></script>
+    <script src="js/readerBackendSync.js?v=backend-1"></script>
+    <script src="js/acquisitionPurpose.js?v=qms-lot-2"></script>
+    <script src="js/qmsLotSelector.js?v=qms-lot-2"></script>
+    <script src="js/app.js?v=upsa-t-concordance-2"></script>
+    <script src="js/upsaLotConcordance.js?v=lot-calibration-1"></script>
+</body>
+</html>
