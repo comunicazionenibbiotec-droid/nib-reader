@@ -14,6 +14,7 @@ from detector import detect_device
 from image_quality import evaluate_quality
 from models import ImageRequest
 from records_router import router as records_router
+from calibration_router import router as calibration_router
 from qms_router import router as qms_router
 from risk_router import router as risk_router
 
@@ -43,6 +44,7 @@ app = FastAPI(
 )
 
 app.include_router(records_router)
+app.include_router(calibration_router)
 app.include_router(qms_router)
 app.include_router(risk_router)
 

@@ -64,6 +64,7 @@ def create_database_tables() -> None:
         QmsQcRecord,
     )
     from risk_models import RiskProbabilityRow
+    from calibration_models import CalibrationSession
 
     # Silence linters while keeping the model-registration imports explicit.
     _ = (
@@ -74,6 +75,7 @@ def create_database_tables() -> None:
         QmsProduct,
         QmsQcRecord,
         RiskProbabilityRow,
+        CalibrationSession,
     )
 
     Base.metadata.create_all(bind=engine)
