@@ -90,6 +90,7 @@ def create_database_tables() -> None:
     if not DATABASE_URL.startswith("sqlite"):
         migrate_record_classification_columns()
         migrate_qms_qc_columns()
+        migrate_calibration_session_columns()
 
 
 def migrate_record_classification_columns() -> None:
@@ -157,3 +158,15 @@ def migrate_qms_qc_columns() -> None:
 def get_db() -> Generator[Session, None, None]:
     with SessionLocal() as session:
         yield session
+
+
+def migrate_calibration_session_columns() -> None:
+    """Link existing calibration sessions to an LR-000198 QMS lot."""
+    statements = [
+        "ALTER TABLE calibration_sessions ADD COLUMN IF NOT EXISTS lot_id UUID",
+        "CREATE INDEX IF NOT EXISTS ix_calibration_sessions_lot_id ON calibration_sessions (lot_id)",
+        "DO $$ BEGIN IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'fk_calibration_sessions_lot_id') THEN ALTER TABLE calibration_sessions ADD CONSTRAINT fk_calibration_sessions_lot_id FOREIGN KEY (lot_id) REFERENCES qms_lots(id) ON DELETE RESTRICT; END IF; END $$",
+    ]
+    with engine.begin() as connection:
+        for statement in statements:
+            connection.execute(text(statement))

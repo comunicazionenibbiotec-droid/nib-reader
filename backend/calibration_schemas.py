@@ -7,6 +7,7 @@ from pydantic import BaseModel, ConfigDict, Field
 class CalibrationSessionCreate(BaseModel):
     calibration_code: str = Field(min_length=1, max_length=80)
     analyte: Literal["upsa"] = "upsa"
+    lot_id: uuid.UUID
     notes: str | None = Field(default=None, max_length=1000)
 
 
@@ -15,6 +16,8 @@ class CalibrationSessionDetail(BaseModel):
     id: uuid.UUID
     calibration_code: str
     analyte: str
+    lot_id: uuid.UUID
+    lot_code: str
     status: str
     opened_at: datetime
     closed_at: datetime | None
