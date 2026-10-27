@@ -20,7 +20,7 @@ class CalibrationSessionDetail(BaseModel):
     id: uuid.UUID
     calibration_code: str
     analyte: str
-    lot_id: uuid.UUID
+    lot_id: uuid.UUID | None
     lot_code: str | None
     status: str
     opened_at: datetime
