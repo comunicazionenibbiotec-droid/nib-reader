@@ -11,13 +11,17 @@ class CalibrationSessionCreate(BaseModel):
     notes: str | None = Field(default=None, max_length=1000)
 
 
+class CalibrationLotUpdate(BaseModel):
+    lot_id: uuid.UUID
+
+
 class CalibrationSessionDetail(BaseModel):
     model_config = ConfigDict(from_attributes=True)
     id: uuid.UUID
     calibration_code: str
     analyte: str
     lot_id: uuid.UUID
-    lot_code: str
+    lot_code: str | None
     status: str
     opened_at: datetime
     closed_at: datetime | None

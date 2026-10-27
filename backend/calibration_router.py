@@ -7,7 +7,7 @@ from sqlalchemy import func, select
 from sqlalchemy.orm import Session
 from database import get_db
 from calibration_models import CalibrationSession
-from calibration_schemas import CalibrationSessionCreate, CalibrationSessionDetail
+from calibration_schemas import CalibrationLotUpdate, CalibrationSessionCreate, CalibrationSessionDetail
 from qms_models import QmsLot
 from record_models import TestRecord
 
@@ -91,8 +91,9 @@ def open_calibration(payload: CalibrationSessionCreate, db: Session = Depends(ge
     lot = db.get(QmsLot, payload.lot_id)
     if lot is None:
         raise HTTPException(status_code=404, detail="Lotto non trovato")
-    if lot.lr_document_code != "LR-000198":
-        raise HTTPException(status_code=409, detail="La calibrazione uPSA richiede un lotto LR-000198")
+    expected_lr = {"upsa": "LR-000122", "uzinc": "LR-000104"}[payload.analyte]
+    if lot.lr_document_code != expected_lr:
+        raise HTTPException(status_code=409, detail=f"La calibrazione {payload.analyte} richiede un lotto {expected_lr}")
     existing = db.scalar(select(CalibrationSession).where(CalibrationSession.calibration_code == code))
     if existing:
         if existing.lot_id != payload.lot_id:
@@ -125,7 +126,7 @@ def calibration_reference(lot_id: uuid.UUID, score: int = Query(ge=0, le=4), db:
     return {
         "calibration_code": session.calibration_code,
         "lot_id": session.lot_id,
-        "lot_code": session.lot.full_lot_record_code,
+        "lot_code": session.lot.full_lot_record_code if session.lot is not None else None,
         "closed_at": session.closed_at,
         "score": score,
         "replicate_count": len(measurements),
@@ -152,6 +153,55 @@ def list_calibrations(
     query = query.order_by(CalibrationSession.created_at.desc()).offset(offset).limit(limit)
     sessions = db.scalars(query).all()
     return [_detail(db, calibration) for calibration in sessions]
+
+
+@router.patch("/{calibration_code}/lot", response_model=CalibrationSessionDetail)
+def update_calibration_lot(calibration_code: str, payload: CalibrationLotUpdate, db: Session = Depends(get_db)):
+    session = db.scalar(select(CalibrationSession).where(CalibrationSession.calibration_code == calibration_code))
+    if session is None:
+        raise HTTPException(status_code=404, detail="Calibration not found")
+    lot = db.get(QmsLot, payload.lot_id)
+    if lot is None:
+        raise HTTPException(status_code=404, detail="Lotto non trovato")
+    expected_lr = {"upsa": "LR-000122", "uzinc": "LR-000104"}.get(session.analyte)
+    if expected_lr is None:
+        raise HTTPException(status_code=409, detail="Analita della calibrazione non supportato")
+    if lot.lr_document_code != expected_lr:
+        raise HTTPException(status_code=409, detail=f"La calibrazione {session.analyte} richiede un lotto {expected_lr}")
+    old_lot_code = session.lot.full_lot_record_code if session.lot is not None else None
+    session.lot_id = lot.id
+    for record in db.scalars(_records_query(session)):
+        record.lot_id = lot.full_lot_record_code
+        if session.analyte == "upsa":
+            record.upsa_lot_id = lot.full_lot_record_code
+        elif session.analyte == "uzinc":
+            record.uzinc_lot_id = lot.full_lot_record_code
+        raw = dict(record.raw_record or {})
+        raw["lot_id"] = lot.full_lot_record_code
+        raw["lot_uuid"] = str(lot.id)
+        if session.analyte == "upsa": raw["upsa_lot_id"] = lot.full_lot_record_code
+        if session.analyte == "uzinc": raw["uzinc_lot_id"] = lot.full_lot_record_code
+        record.raw_record = raw
+    audit = f"Lotto riassegnato da {old_lot_code or 'non disponibile'} a {lot.full_lot_record_code}"
+    session.notes = (session.notes + "\n" + audit).strip() if session.notes else audit
+    db.commit(); db.refresh(session)
+    return _detail(db, session)
+
+
+@router.delete("/{calibration_code}")
+def delete_calibration(calibration_code: str, confirm: bool = Query(default=False), db: Session = Depends(get_db)):
+    if not confirm:
+        raise HTTPException(status_code=400, detail="Aggiungi confirm=true per confermare l'eliminazione")
+    session = db.scalar(select(CalibrationSession).where(CalibrationSession.calibration_code == calibration_code))
+    if session is None:
+        raise HTTPException(status_code=404, detail="Calibration not found")
+    records = list(db.scalars(_records_query(session)))
+    deleted_acquisitions = len(records)
+    for record in records:
+        db.delete(record)
+    db.delete(session)
+    db.commit()
+    return {"deleted": True, "calibration_code": calibration_code, "deleted_acquisitions": deleted_acquisitions}
 
 
 @router.get("/{calibration_code}", response_model=CalibrationSessionDetail)
