@@ -1,4 +1,5 @@
 import statistics
+import uuid
 from datetime import datetime, timezone
 from typing import Any
 from fastapi import APIRouter, Depends, HTTPException, Query, status
@@ -14,13 +15,10 @@ router = APIRouter(prefix="/calibrations", tags=["calibrations"])
 
 
 def _records_query(session: CalibrationSession):
-    # calibration_code is unique in calibration_sessions and is the stable
-    # relation between a session and its acquisitions. Do not also filter by
-    # TestRecord.lot_id: depending on the records schema that field can contain
-    # the human-readable Lot Record code while the session stores the QMS UUID.
     return select(TestRecord).where(
         TestRecord.record_purpose == "calibration",
         TestRecord.calibration_code == session.calibration_code,
+        TestRecord.lot_id == session.lot.full_lot_record_code,
     )
 
 
@@ -133,6 +131,27 @@ def calibration_reference(lot_id: uuid.UUID, score: int = Query(ge=0, le=4), db:
     }
 
 
+@router.get("", response_model=list[CalibrationSessionDetail])
+def list_calibrations(
+    analyte: str | None = Query(default=None, pattern="^(upsa|uzinc)$"),
+    status_filter: str | None = Query(default=None, alias="status", pattern="^(open|closed)$"),
+    lot_id: uuid.UUID | None = Query(default=None),
+    limit: int = Query(default=50, ge=1, le=500),
+    offset: int = Query(default=0, ge=0),
+    db: Session = Depends(get_db),
+):
+    query = select(CalibrationSession)
+    if analyte is not None:
+        query = query.where(CalibrationSession.analyte == analyte)
+    if status_filter is not None:
+        query = query.where(CalibrationSession.status == status_filter)
+    if lot_id is not None:
+        query = query.where(CalibrationSession.lot_id == lot_id)
+    query = query.order_by(CalibrationSession.created_at.desc()).offset(offset).limit(limit)
+    sessions = db.scalars(query).all()
+    return [_detail(db, calibration) for calibration in sessions]
+
+
 @router.get("/{calibration_code}", response_model=CalibrationSessionDetail)
 def get_calibration(calibration_code: str, db: Session = Depends(get_db)):
     session = db.scalar(select(CalibrationSession).where(CalibrationSession.calibration_code == calibration_code))
@@ -145,8 +164,7 @@ def close_calibration(calibration_code: str, db: Session = Depends(get_db)):
     session = db.scalar(select(CalibrationSession).where(CalibrationSession.calibration_code == calibration_code))
     if not session: raise HTTPException(status_code=404, detail="Calibration not found")
     count = db.scalar(select(func.count()).select_from(_records_query(session).subquery())) or 0
-    if count < 1:
-        raise HTTPException(status_code=409, detail="Salva almeno una replica della tabella prima di chiudere la calibrazione")
+    if count < 1: raise HTTPException(status_code=409, detail="Save at least one acquisition before closing")
     session.status = "closed"; session.closed_at = datetime.now(timezone.utc)
     db.commit(); db.refresh(session)
     return _detail(db, session)
