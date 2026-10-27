@@ -17,7 +17,6 @@ from records_router import router as records_router
 from calibration_router import router as calibration_router
 from qms_router import router as qms_router
 from risk_router import router as risk_router
-from qms_nomenclature_migration import run_qms_nomenclature_migration
 
 
 @asynccontextmanager
@@ -39,7 +38,7 @@ async def lifespan(app: FastAPI):
         "ZENPSA: QMS nomenclature migration beginning",
         flush=True,
     )
-    run_qms_nomenclature_migration()
+  
     print(
         "ZENPSA: QMS nomenclature migration completed",
         flush=True,
