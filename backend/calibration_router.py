@@ -8,7 +8,7 @@ from sqlalchemy.orm import Session
 from database import get_db
 from calibration_models import CalibrationSession
 from calibration_schemas import CalibrationLotUpdate, CalibrationSessionCreate, CalibrationSessionDetail
-from qms_models import QmsLot
+from qms_models import QmsLot, QmsLotRelationship
 from record_models import TestRecord
 
 router = APIRouter(prefix="/calibrations", tags=["calibrations"])
@@ -30,8 +30,10 @@ def _detail(db: Session, session: CalibrationSession) -> dict[str, Any]:
         "id": session.id,
         "calibration_code": session.calibration_code,
         "analyte": session.analyte,
-        "lot_id": session.lot_id,
-        "lot_code": session.lot.full_lot_record_code if session.lot is not None else None,
+        "selected_device_lot_id": selected_lot.id,
+        "selected_device_lot_code": selected_lot.full_lot_record_code,
+        "lot_id": calibration_lot.id,
+        "lot_code": calibration_lot.full_lot_record_code,
         "status": session.status,
         "opened_at": session.opened_at,
         "closed_at": session.closed_at,
@@ -82,7 +84,12 @@ def _measurement(record: TestRecord) -> dict[str, float | int] | None:
 
 
 def _aggregate(values: list[float]) -> dict[str, float]:
-    return {"median": statistics.median(values), "minimum": min(values), "maximum": max(values)}
+    return {
+        "mean": statistics.fmean(values),
+        "median": statistics.median(values),
+        "minimum": min(values),
+        "maximum": max(values),
+    }
 
 
 @router.post("", response_model=CalibrationSessionDetail, status_code=status.HTTP_201_CREATED)
@@ -108,13 +115,39 @@ def open_calibration(payload: CalibrationSessionCreate, db: Session = Depends(ge
 
 @router.get("/reference")
 def calibration_reference(lot_id: uuid.UUID, score: int = Query(ge=0, le=4), db: Session = Depends(get_db)):
+    selected_lot = db.get(QmsLot, lot_id)
+    if selected_lot is None:
+        raise HTTPException(status_code=404, detail="Lotto selezionato non trovato")
+
+    calibration_lot = selected_lot
+    if selected_lot.lr_document_code == "LR-000198":
+        calibration_lot = db.scalar(
+            select(QmsLot)
+            .join(QmsLotRelationship, QmsLotRelationship.parent_lot_id == QmsLot.id)
+            .where(
+                QmsLotRelationship.child_lot_id == selected_lot.id,
+                QmsLot.lr_document_code == "LR-000122",
+            )
+            .order_by(QmsLotRelationship.created_at.desc())
+        )
+        if calibration_lot is None:
+            raise HTTPException(
+                status_code=404,
+                detail="Il lotto ZenPSA Pro device non ha un lotto componente LF strips LR-000122 associato",
+            )
+    elif selected_lot.lr_document_code != "LR-000122":
+        raise HTTPException(
+            status_code=409,
+            detail="Per il controllo uPSA seleziona un lotto ZenPSA Pro device LR-000198 o LF strips LR-000122",
+        )
+
     session = db.scalar(select(CalibrationSession).where(
-        CalibrationSession.lot_id == lot_id,
+        CalibrationSession.lot_id == calibration_lot.id,
         CalibrationSession.analyte == "upsa",
         CalibrationSession.status == "closed",
     ).order_by(CalibrationSession.closed_at.desc()))
     if session is None:
-        raise HTTPException(status_code=404, detail="Nessuna calibrazione uPSA chiusa per questo lotto")
+        raise HTTPException(status_code=404, detail=f"Nessuna calibrazione uPSA chiusa per il lotto LF strips {calibration_lot.full_lot_record_code}")
     measurements = []
     for record in db.scalars(_records_query(session)):
         item = _measurement(record)
