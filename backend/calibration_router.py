@@ -15,10 +15,12 @@ router = APIRouter(prefix="/calibrations", tags=["calibrations"])
 
 
 def _records_query(session: CalibrationSession):
+    # calibration_code is the stable link between the calibration session
+    # and its acquisitions. Do not dereference session.lot here because
+    # historical sessions may point to a QMS lot that is no longer available.
     return select(TestRecord).where(
         TestRecord.record_purpose == "calibration",
         TestRecord.calibration_code == session.calibration_code,
-        TestRecord.lot_id == session.lot.full_lot_record_code,
     )
 
 
@@ -29,7 +31,7 @@ def _detail(db: Session, session: CalibrationSession) -> dict[str, Any]:
         "calibration_code": session.calibration_code,
         "analyte": session.analyte,
         "lot_id": session.lot_id,
-        "lot_code": session.lot.full_lot_record_code,
+        "lot_code": session.lot.full_lot_record_code if session.lot is not None else None,
         "status": session.status,
         "opened_at": session.opened_at,
         "closed_at": session.closed_at,
@@ -150,29 +152,6 @@ def list_calibrations(
     query = query.order_by(CalibrationSession.created_at.desc()).offset(offset).limit(limit)
     sessions = db.scalars(query).all()
     return [_detail(db, calibration) for calibration in sessions]
-
-
-@router.get("/{calibration_code}/acquisitions")
-def calibration_acquisitions(calibration_code: str, db: Session = Depends(get_db)):
-    session = db.scalar(select(CalibrationSession).where(CalibrationSession.calibration_code == calibration_code))
-    if session is None:
-        raise HTTPException(status_code=404, detail="Calibration not found")
-    items = []
-    for record in db.scalars(_records_query(session).order_by(TestRecord.optical_psa_score_0_4, TestRecord.replicate_number, TestRecord.captured_at)):
-        measurement = _measurement(record)
-        items.append({
-            "id": record.id,
-            "sample_code": record.sample_code,
-            "score": record.optical_psa_score_0_4,
-            "replicate_number": record.replicate_number,
-            "nominal_concentration_ug_ml": record.nominal_concentration_ug_ml,
-            "captured_at": record.captured_at,
-            "measurement": measurement,
-        })
-    return {
-        "calibration": _detail(db, session),
-        "acquisitions": items,
-    }
 
 
 @router.get("/{calibration_code}", response_model=CalibrationSessionDetail)
