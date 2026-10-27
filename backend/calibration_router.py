@@ -14,10 +14,13 @@ router = APIRouter(prefix="/calibrations", tags=["calibrations"])
 
 
 def _records_query(session: CalibrationSession):
+    # calibration_code is unique in calibration_sessions and is the stable
+    # relation between a session and its acquisitions. Do not also filter by
+    # TestRecord.lot_id: depending on the records schema that field can contain
+    # the human-readable Lot Record code while the session stores the QMS UUID.
     return select(TestRecord).where(
         TestRecord.record_purpose == "calibration",
         TestRecord.calibration_code == session.calibration_code,
-        TestRecord.lot_id == session.lot.full_lot_record_code,
     )
 
 
@@ -65,10 +68,6 @@ def _measurement(record: TestRecord) -> dict[str, float | int] | None:
         "t_area": _metric(t, "area"),
         "c_height": _metric(c, "height"),
         "c_area": _metric(c, "area"),
-        "t_width": _metric(t, "width_at_detection_threshold_px"),
-        "t_fwhm": _metric(t, "fwhm_px"),
-        "c_width": _metric(c, "width_at_detection_threshold_px"),
-        "c_fwhm": _metric(c, "fwhm_px"),
         "height_ratio": _metric(ratios, "height_T_over_C"),
         "area_ratio": _metric(ratios, "area_T_over_C"),
     }
@@ -77,14 +76,13 @@ def _measurement(record: TestRecord) -> dict[str, float | int] | None:
     if values["area_ratio"] is None and values["t_area"] is not None and values["c_area"] not in (None, 0):
         values["area_ratio"] = values["t_area"] / values["c_area"]
     score = record.optical_psa_score_0_4
-    required = ["t_height", "t_area", "c_height", "c_area", "height_ratio", "area_ratio"]
-    if score is None or any(values[key] is None for key in required):
+    if score is None or any(values[key] is None for key in values):
         return None
     return {"score": int(score), **values}
 
 
 def _aggregate(values: list[float]) -> dict[str, float]:
-    return {"mean": statistics.fmean(values), "median": statistics.median(values), "minimum": min(values), "maximum": max(values)}
+    return {"median": statistics.median(values), "minimum": min(values), "maximum": max(values)}
 
 
 @router.post("", response_model=CalibrationSessionDetail, status_code=status.HTTP_201_CREATED)
@@ -123,7 +121,7 @@ def calibration_reference(lot_id: uuid.UUID, score: int = Query(ge=0, le=4), db:
             measurements.append(item)
     if not measurements:
         raise HTTPException(status_code=404, detail="Nessun riferimento per lo score ottico selezionato")
-    metric_names = ["t_height", "t_area", "t_width", "t_fwhm", "c_height", "c_area", "c_width", "c_fwhm", "height_ratio", "area_ratio"]
+    metric_names = ["t_height", "t_area", "c_height", "c_area", "height_ratio", "area_ratio"]
     return {
         "calibration_code": session.calibration_code,
         "lot_id": session.lot_id,
@@ -131,7 +129,7 @@ def calibration_reference(lot_id: uuid.UUID, score: int = Query(ge=0, le=4), db:
         "closed_at": session.closed_at,
         "score": score,
         "replicate_count": len(measurements),
-        "metrics": {name: _aggregate([float(row[name]) for row in measurements if row.get(name) is not None]) for name in metric_names if any(row.get(name) is not None for row in measurements)},
+        "metrics": {name: _aggregate([float(row[name]) for row in measurements]) for name in metric_names},
     }
 
 
@@ -147,7 +145,8 @@ def close_calibration(calibration_code: str, db: Session = Depends(get_db)):
     session = db.scalar(select(CalibrationSession).where(CalibrationSession.calibration_code == calibration_code))
     if not session: raise HTTPException(status_code=404, detail="Calibration not found")
     count = db.scalar(select(func.count()).select_from(_records_query(session).subquery())) or 0
-    if count < 1: raise HTTPException(status_code=409, detail="Save at least one acquisition before closing")
+    if count < 1:
+        raise HTTPException(status_code=409, detail="Salva almeno una replica della tabella prima di chiudere la calibrazione")
     session.status = "closed"; session.closed_at = datetime.now(timezone.utc)
     db.commit(); db.refresh(session)
     return _detail(db, session)
