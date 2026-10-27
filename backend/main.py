@@ -34,16 +34,6 @@ async def lifespan(app: FastAPI):
         flush=True,
     )
 
-    print(
-        "ZENPSA: QMS nomenclature migration beginning",
-        flush=True,
-    )
-  
-    print(
-        "ZENPSA: QMS nomenclature migration completed",
-        flush=True,
-    )
-
     yield
 
 
