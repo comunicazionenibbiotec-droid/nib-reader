@@ -204,6 +204,39 @@ def delete_calibration(calibration_code: str, confirm: bool = Query(default=Fals
     return {"deleted": True, "calibration_code": calibration_code, "deleted_acquisitions": deleted_acquisitions}
 
 
+@router.get("/{calibration_code}/acquisitions")
+def calibration_acquisitions(calibration_code: str, db: Session = Depends(get_db)):
+    session = db.scalar(
+        select(CalibrationSession).where(
+            CalibrationSession.calibration_code == calibration_code
+        )
+    )
+    if session is None:
+        raise HTTPException(status_code=404, detail="Calibration not found")
+
+    query = _records_query(session).order_by(
+        TestRecord.optical_psa_score_0_4,
+        TestRecord.replicate_number,
+        TestRecord.captured_at,
+    )
+    acquisitions = []
+    for record in db.scalars(query):
+        acquisitions.append({
+            "id": record.id,
+            "sample_code": record.sample_code,
+            "score": record.optical_psa_score_0_4,
+            "replicate_number": record.replicate_number,
+            "nominal_concentration_ug_ml": record.nominal_concentration_ug_ml,
+            "captured_at": record.captured_at,
+            "measurement": _measurement(record),
+        })
+
+    return {
+        "calibration": _detail(db, session),
+        "acquisitions": acquisitions,
+    }
+
+
 @router.get("/{calibration_code}", response_model=CalibrationSessionDetail)
 def get_calibration(calibration_code: str, db: Session = Depends(get_db)):
     session = db.scalar(select(CalibrationSession).where(CalibrationSession.calibration_code == calibration_code))
