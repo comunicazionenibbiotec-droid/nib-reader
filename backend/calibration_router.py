@@ -18,6 +18,7 @@ def _records_query(session: CalibrationSession):
     return select(TestRecord).where(
         TestRecord.record_purpose == "calibration",
         TestRecord.calibration_code == session.calibration_code,
+        TestRecord.lot_id == session.lot.full_lot_record_code,
     )
 
 
@@ -88,11 +89,8 @@ def open_calibration(payload: CalibrationSessionCreate, db: Session = Depends(ge
     lot = db.get(QmsLot, payload.lot_id)
     if lot is None:
         raise HTTPException(status_code=404, detail="Lotto non trovato")
-    expected_lot_series = {"upsa": "LR-000122", "uzinc": "LR-000104"}
-    expected_lr = expected_lot_series[payload.analyte]
-    if lot.lr_document_code != expected_lr:
-        label = "PM-000100 · LF strips" if payload.analyte == "upsa" else "PM-000104 · Colorimetric pad"
-        raise HTTPException(status_code=409, detail=f"La calibrazione {payload.analyte} richiede un lotto {label} · {expected_lr}")
+    if lot.lr_document_code != "LR-000198":
+        raise HTTPException(status_code=409, detail="La calibrazione uPSA richiede un lotto LR-000198")
     existing = db.scalar(select(CalibrationSession).where(CalibrationSession.calibration_code == code))
     if existing:
         if existing.lot_id != payload.lot_id:
@@ -152,6 +150,29 @@ def list_calibrations(
     query = query.order_by(CalibrationSession.created_at.desc()).offset(offset).limit(limit)
     sessions = db.scalars(query).all()
     return [_detail(db, calibration) for calibration in sessions]
+
+
+@router.get("/{calibration_code}/acquisitions")
+def calibration_acquisitions(calibration_code: str, db: Session = Depends(get_db)):
+    session = db.scalar(select(CalibrationSession).where(CalibrationSession.calibration_code == calibration_code))
+    if session is None:
+        raise HTTPException(status_code=404, detail="Calibration not found")
+    items = []
+    for record in db.scalars(_records_query(session).order_by(TestRecord.optical_psa_score_0_4, TestRecord.replicate_number, TestRecord.captured_at)):
+        measurement = _measurement(record)
+        items.append({
+            "id": record.id,
+            "sample_code": record.sample_code,
+            "score": record.optical_psa_score_0_4,
+            "replicate_number": record.replicate_number,
+            "nominal_concentration_ug_ml": record.nominal_concentration_ug_ml,
+            "captured_at": record.captured_at,
+            "measurement": measurement,
+        })
+    return {
+        "calibration": _detail(db, session),
+        "acquisitions": items,
+    }
 
 
 @router.get("/{calibration_code}", response_model=CalibrationSessionDetail)
