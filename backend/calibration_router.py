@@ -3,7 +3,7 @@ import uuid
 from datetime import datetime, timezone
 from typing import Any
 from fastapi import APIRouter, Depends, HTTPException, Query, status
-from sqlalchemy import func, select
+from sqlalchemy import func, or_, select
 from sqlalchemy.orm import Session
 from database import get_db
 from calibration_models import CalibrationSession
@@ -121,15 +121,27 @@ def calibration_reference(lot_id: uuid.UUID, score: int = Query(ge=0, le=4), db:
 
     calibration_lot = selected_lot
     if selected_lot.lr_document_code == "LR-000198":
-        calibration_lot = db.scalar(
-            select(QmsLot)
-            .join(QmsLotRelationship, QmsLotRelationship.parent_lot_id == QmsLot.id)
+        calibration_lot = None
+        relationships = db.scalars(
+            select(QmsLotRelationship)
             .where(
-                QmsLotRelationship.child_lot_id == selected_lot.id,
-                QmsLot.lr_document_code == "LR-000122",
+                or_(
+                    QmsLotRelationship.parent_lot_id == selected_lot.id,
+                    QmsLotRelationship.child_lot_id == selected_lot.id,
+                )
             )
             .order_by(QmsLotRelationship.created_at.desc())
-        )
+        ).all()
+        for relationship in relationships:
+            related_lot_id = (
+                relationship.child_lot_id
+                if relationship.parent_lot_id == selected_lot.id
+                else relationship.parent_lot_id
+            )
+            related_lot = db.get(QmsLot, related_lot_id)
+            if related_lot is not None and related_lot.lr_document_code == "LR-000122":
+                calibration_lot = related_lot
+                break
         if calibration_lot is None:
             raise HTTPException(
                 status_code=404,
