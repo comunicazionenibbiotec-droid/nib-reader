@@ -65,6 +65,10 @@ def _measurement(record: TestRecord) -> dict[str, float | int] | None:
         "t_area": _metric(t, "area"),
         "c_height": _metric(c, "height"),
         "c_area": _metric(c, "area"),
+        "t_width": _metric(t, "width_at_detection_threshold_px"),
+        "t_fwhm": _metric(t, "fwhm_px"),
+        "c_width": _metric(c, "width_at_detection_threshold_px"),
+        "c_fwhm": _metric(c, "fwhm_px"),
         "height_ratio": _metric(ratios, "height_T_over_C"),
         "area_ratio": _metric(ratios, "area_T_over_C"),
     }
@@ -73,13 +77,14 @@ def _measurement(record: TestRecord) -> dict[str, float | int] | None:
     if values["area_ratio"] is None and values["t_area"] is not None and values["c_area"] not in (None, 0):
         values["area_ratio"] = values["t_area"] / values["c_area"]
     score = record.optical_psa_score_0_4
-    if score is None or any(values[key] is None for key in values):
+    required = ["t_height", "t_area", "c_height", "c_area", "height_ratio", "area_ratio"]
+    if score is None or any(values[key] is None for key in required):
         return None
     return {"score": int(score), **values}
 
 
 def _aggregate(values: list[float]) -> dict[str, float]:
-    return {"median": statistics.median(values), "minimum": min(values), "maximum": max(values)}
+    return {"mean": statistics.fmean(values), "median": statistics.median(values), "minimum": min(values), "maximum": max(values)}
 
 
 @router.post("", response_model=CalibrationSessionDetail, status_code=status.HTTP_201_CREATED)
@@ -118,7 +123,7 @@ def calibration_reference(lot_id: uuid.UUID, score: int = Query(ge=0, le=4), db:
             measurements.append(item)
     if not measurements:
         raise HTTPException(status_code=404, detail="Nessun riferimento per lo score ottico selezionato")
-    metric_names = ["t_height", "t_area", "c_height", "c_area", "height_ratio", "area_ratio"]
+    metric_names = ["t_height", "t_area", "t_width", "t_fwhm", "c_height", "c_area", "c_width", "c_fwhm", "height_ratio", "area_ratio"]
     return {
         "calibration_code": session.calibration_code,
         "lot_id": session.lot_id,
@@ -126,7 +131,7 @@ def calibration_reference(lot_id: uuid.UUID, score: int = Query(ge=0, le=4), db:
         "closed_at": session.closed_at,
         "score": score,
         "replicate_count": len(measurements),
-        "metrics": {name: _aggregate([float(row[name]) for row in measurements]) for name in metric_names},
+        "metrics": {name: _aggregate([float(row[name]) for row in measurements if row.get(name) is not None]) for name in metric_names if any(row.get(name) is not None for row in measurements)},
     }
 
 
