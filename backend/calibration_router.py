@@ -18,7 +18,6 @@ def _records_query(session: CalibrationSession):
     return select(TestRecord).where(
         TestRecord.record_purpose == "calibration",
         TestRecord.calibration_code == session.calibration_code,
-        TestRecord.lot_id == session.lot.full_lot_record_code,
     )
 
 
@@ -89,8 +88,11 @@ def open_calibration(payload: CalibrationSessionCreate, db: Session = Depends(ge
     lot = db.get(QmsLot, payload.lot_id)
     if lot is None:
         raise HTTPException(status_code=404, detail="Lotto non trovato")
-    if lot.lr_document_code != "LR-000198":
-        raise HTTPException(status_code=409, detail="La calibrazione uPSA richiede un lotto LR-000198")
+    expected_lot_series = {"upsa": "LR-000122", "uzinc": "LR-000104"}
+    expected_lr = expected_lot_series[payload.analyte]
+    if lot.lr_document_code != expected_lr:
+        label = "PM-000100 · LF strips" if payload.analyte == "upsa" else "PM-000104 · Colorimetric pad"
+        raise HTTPException(status_code=409, detail=f"La calibrazione {payload.analyte} richiede un lotto {label} · {expected_lr}")
     existing = db.scalar(select(CalibrationSession).where(CalibrationSession.calibration_code == code))
     if existing:
         if existing.lot_id != payload.lot_id:
