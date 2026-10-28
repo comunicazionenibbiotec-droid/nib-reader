@@ -2,7 +2,7 @@ from sqlalchemy import func, select
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
-from qms_models import QmsLot, QmsLotRecordType, QmsProduct
+from qms_models import QmsLot, QmsLotRecordType, QmsLotRelationship, QmsProduct
 from qms_schemas import LotCreate
 
 
@@ -83,14 +83,26 @@ def create_lot(session: Session, payload: LotCreate):
         status="draft",
     )
     session.add(lot)
-
     try:
+        session.flush()
+        parent_ids = list(dict.fromkeys(payload.parent_lot_ids))
+        if record_type.lr_document_code == "LR-000198":
+            if len(parent_ids) != 2:
+                raise ValueError("ZenPSA Pro device richiede esattamente un lotto LF strips e un lotto Colorimetric pad")
+            parents = [session.get(QmsLot, parent_id) for parent_id in parent_ids]
+            if any(parent is None for parent in parents):
+                raise ValueError("Uno dei lotti componenti non esiste")
+            if {parent.lr_document_code for parent in parents} != {"LR-000122", "LR-000104"}:
+                raise ValueError("I componenti devono essere un lotto LR-000122 e un lotto LR-000104")
+        for parent_id in parent_ids:
+            session.add(QmsLotRelationship(
+                parent_lot_id=parent_id,
+                child_lot_id=lot.id,
+                relationship_type=payload.relationship_type or "assembled_into",
+            ))
         session.commit()
-    except IntegrityError:
+    except (IntegrityError, ValueError):
         session.rollback()
-        raise ValueError(
-            "Conflitto nella numerazione del lotto. Riprovare."
-        )
-
+        raise
     session.refresh(lot)
     return lot
