@@ -7,8 +7,6 @@ from database import get_db
 from qms_models import QmsLot, QmsLotRecordType, QmsLotRelationship, QmsProduct, QmsQcRecord
 from qms_schemas import LotCreate, LotOut, ProductOut, RelationshipOut, QcRecordCreate
 from qms_service import build_full_code, create_lot, next_progressive
-from calibration_models import CalibrationSession
-from record_models import TestRecord
 
 router = APIRouter(prefix="/qms", tags=["qms"])
 
@@ -38,36 +36,6 @@ def add_lot(payload: LotCreate, db: Session=Depends(get_db)):
     try: return create_lot(db,payload)
     except ValueError as error: raise HTTPException(status_code=409, detail=str(error))
 
-@router.delete("/lots/{lot_id}")
-def delete_lot(lot_id: uuid.UUID, confirm: bool = Query(default=False), db: Session = Depends(get_db)):
-    if not confirm:
-        raise HTTPException(status_code=400, detail="Aggiungi confirm=true per confermare l'eliminazione")
-    lot = db.get(QmsLot, lot_id)
-    if lot is None:
-        raise HTTPException(status_code=404, detail="Lotto non trovato")
-    relation_count = len(list(db.scalars(select(QmsLotRelationship).where(
-        (QmsLotRelationship.parent_lot_id == lot_id) | (QmsLotRelationship.child_lot_id == lot_id)
-    ))))
-    calibration_count = len(list(db.scalars(select(CalibrationSession).where(CalibrationSession.lot_id == lot_id))))
-    qc_count = len(list(db.scalars(select(QmsQcRecord).where(QmsQcRecord.lot_id == lot_id))))
-    record_count = len(list(db.scalars(select(TestRecord).where(
-        (TestRecord.lot_id == lot.full_lot_record_code) |
-        (TestRecord.upsa_lot_id == lot.full_lot_record_code) |
-        (TestRecord.uzinc_lot_id == lot.full_lot_record_code)
-    ))))
-    if relation_count or calibration_count or qc_count or record_count:
-        raise HTTPException(status_code=409, detail={
-            "message": "Il lotto non può essere eliminato perché è già utilizzato",
-            "relationships": relation_count,
-            "calibrations": calibration_count,
-            "qc_records": qc_count,
-            "test_records": record_count,
-        })
-    code = lot.full_lot_record_code
-    db.delete(lot); db.commit()
-    return {"deleted": True, "lot_id": lot_id, "lot_code": code}
-
-
 @router.get("/lots/{lot_id}", response_model=LotOut)
 def get_lot(lot_id: uuid.UUID, db: Session=Depends(get_db)):
     lot=db.get(QmsLot,lot_id)
@@ -89,6 +57,26 @@ def add_qc_record(payload: QcRecordCreate, db: Session = Depends(get_db)):
     if payload.qc_type=="colorimetric_pad" and lot.lr_document_code!="LR-000104": raise HTTPException(status_code=409,detail="Il QC del pad richiede un lotto LR-000104")
     record=QmsQcRecord(lot_id=lot.id,qc_type=payload.qc_type,capture_mode=payload.capture_mode,captured_at=payload.captured_at,image_width=payload.image_width,image_height=payload.image_height,image_filename=payload.image_filename,roi_data_json=json.dumps(payload.roi_data,ensure_ascii=False),analysis_data_json=json.dumps(payload.analysis_data,ensure_ascii=False) if payload.analysis_data else None)
     db.add(record);db.commit();db.refresh(record);return serialize_qc_record(record,lot)
+
+@router.delete("/qc-records/{record_id}")
+def delete_qc_record(record_id: uuid.UUID, confirm: bool = Query(default=False), db: Session = Depends(get_db)):
+    if not confirm:
+        raise HTTPException(status_code=400, detail="Aggiungi confirm=true per confermare l'eliminazione")
+    record = db.get(QmsQcRecord, record_id)
+    if record is None:
+        raise HTTPException(status_code=404, detail="Registrazione QC non trovata")
+    lot = db.get(QmsLot, record.lot_id)
+    lot_code = lot.full_lot_record_code if lot is not None else None
+    image_filename = record.image_filename
+    db.delete(record)
+    db.commit()
+    return {
+        "deleted": True,
+        "qc_record_id": record_id,
+        "lot_code": lot_code,
+        "image_filename": image_filename,
+    }
+
 
 @router.get("/qc-records")
 def qc_records(lot_id: uuid.UUID | None=None,qc_type: str | None=None,limit:int=Query(default=200,ge=1,le=500),db:Session=Depends(get_db)):
