@@ -147,7 +147,7 @@ def create_or_update_record(
     workflow = payload.model_extra.get("reader_workflow", {}) if payload.model_extra else {}
     dilution = workflow.get("dilution", {}) if isinstance(workflow, dict) else {}
     record.sample_condition = workflow.get("sample_condition") or record_data.get("sample_condition")
-    record.acquisition_pair_id = workflow.get("pair_id") or record_data.get("acquisition_pair_id")
+    record.acquisition_pair_id = workflow.get("pair_id") or info.get("acquisition_pair_id")
     record.dilution_factor = _number(dilution.get("factor"))
     record.reference_urine_volume_ml = _number(dilution.get("reference_urine_volume_ml"))
     record.target_mix_volume_ul = _number(dilution.get("target_mix_volume_ul"))
