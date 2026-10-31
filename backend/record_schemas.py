@@ -108,6 +108,17 @@ class RecordSummary(BaseModel):
     diagnosis: str | None
     test_state: str | None
     test_valid: bool
+    sample_condition: str | None
+    acquisition_pair_id: str | None
+    parent_record_id: uuid.UUID | None
+    dilution_factor: float | None
+    image_storage_status: str
+    image_filename: str | None
+    image_content_type: str | None
+    image_size_bytes: int | None
+    image_sha256: str | None
+    image_uploaded_at: datetime | None
+    image_upload_error: str | None
     updated_at: datetime
 
 
@@ -134,6 +145,17 @@ class RecordDetail(BaseModel):
     psa_area_t_c_ratio: float | None
     test_state: str | None
     test_valid: bool
+    sample_condition: str | None
+    acquisition_pair_id: str | None
+    parent_record_id: uuid.UUID | None
+    dilution_factor: float | None
+    image_storage_status: str
+    image_filename: str | None
+    image_content_type: str | None
+    image_size_bytes: int | None
+    image_sha256: str | None
+    image_uploaded_at: datetime | None
+    image_upload_error: str | None
     lot_id: str | None
     age: int | None
     serum_psa_ng_ml: float | None

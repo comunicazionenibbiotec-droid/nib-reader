@@ -144,6 +144,18 @@ def create_or_update_record(
     record.test_valid = bool(backend.get("test_valid", False))
     record.lot_id = analytical.get("lot_id")
 
+    workflow = payload.model_extra.get("reader_workflow", {}) if payload.model_extra else {}
+    dilution = workflow.get("dilution", {}) if isinstance(workflow, dict) else {}
+    record.sample_condition = workflow.get("sample_condition") or record_data.get("sample_condition")
+    record.acquisition_pair_id = workflow.get("pair_id") or record_data.get("acquisition_pair_id")
+    record.dilution_factor = _number(dilution.get("factor"))
+    record.reference_urine_volume_ml = _number(dilution.get("reference_urine_volume_ml"))
+    record.target_mix_volume_ul = _number(dilution.get("target_mix_volume_ul"))
+    record.sample_volume_ul = _number(dilution.get("sample_volume_ul"))
+    record.solvent_volume_ul = _number(dilution.get("solvent_volume_ul"))
+    if not getattr(record, "image_storage_status", None):
+        record.image_storage_status = "NOT_REQUESTED"
+
     record.age = _integer(clinical.get("age", subject.get("age")))
     record.serum_psa_ng_ml = _number(
         clinical.get(

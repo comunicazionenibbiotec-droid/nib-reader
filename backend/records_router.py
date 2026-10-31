@@ -123,5 +123,11 @@ def delete_record(record_id: uuid.UUID, db: Session = Depends(get_db)):
     record = db.get(TestRecord, record_id)
     if record is None:
         raise HTTPException(status_code=404, detail="Record not found")
+    if record.image_object_key:
+        from r2_storage import delete_object
+        try:
+            delete_object(record.image_object_key)
+        except Exception as exc:
+            raise HTTPException(status_code=502, detail=f"R2 delete failed: {exc}") from exc
     db.delete(record)
     db.commit()
