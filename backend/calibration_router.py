@@ -9,7 +9,7 @@ from database import get_db
 from calibration_models import CalibrationSession
 from calibration_workflow_models import CalibrationPoint, CalibrationMeasurement
 from calibration_schemas import CalibrationLotUpdate, CalibrationSessionCreate, CalibrationSessionDetail
-from qms_models import QmsLot
+from qms_models import QmsLot, QmsLotRelationship
 from record_models import TestRecord
 
 router = APIRouter(prefix="/calibrations", tags=["calibrations"])
@@ -123,36 +123,39 @@ def open_calibration(payload: CalibrationSessionCreate, db: Session = Depends(ge
 def calibration_reference(lot_id: uuid.UUID, score: int = Query(ge=0, le=4), db: Session = Depends(get_db)):
     selected_lot = db.get(QmsLot, lot_id)
     if selected_lot is None:
-        raise HTTPException(status_code=404, detail="Lotto selezionato non trovato")
+        raise HTTPException(status_code=404, detail="Lotto ZenPSA Pro selezionato non trovato")
 
-    # The Reader may pass either the LF-strip lot itself or the ZenPSA device lot.
-    # First try the exact lot; if it is not LR-000122, resolve the linked LF-strip lot
-    # from the existing lot calibration mapping when available.
+    # The clinical Reader selects the finished ZenPSA Pro device lot (LR-000198).
+    # Its LF-strip calibration belongs to the linked parent lot LR-000122.
     calibration_lot = selected_lot
-    session = db.scalar(select(CalibrationSession).where(
-        CalibrationSession.lot_id == calibration_lot.id,
-        CalibrationSession.analyte == "upsa",
-        CalibrationSession.status == "closed",
-    ).order_by(CalibrationSession.closed_at.desc()))
+    if selected_lot.lr_document_code == "LR-000198":
+        linked_lf_lot = db.scalar(
+            select(QmsLot)
+            .join(QmsLotRelationship, QmsLotRelationship.parent_lot_id == QmsLot.id)
+            .where(
+                QmsLotRelationship.child_lot_id == selected_lot.id,
+                QmsLot.lr_document_code == "LR-000122",
+            )
+            .order_by(QmsLotRelationship.created_at.desc())
+        )
+        if linked_lf_lot is None:
+            raise HTTPException(status_code=404, detail="Il lotto ZenPSA Pro selezionato non ha un lotto LF strips LR-000122 collegato")
+        calibration_lot = linked_lf_lot
+    elif selected_lot.lr_document_code != "LR-000122":
+        raise HTTPException(status_code=409, detail="Il controllo uPSA richiede un lotto ZenPSA Pro LR-000198 o un lotto LF strips LR-000122")
 
-    if session is None:
-        # Compatibility fallback: some Reader records expose the lot code rather than UUID.
-        # Resolve the latest closed uPSA calibration whose QMS lot code matches the selected code.
-        session = db.scalar(select(CalibrationSession).join(QmsLot, CalibrationSession.lot_id == QmsLot.id).where(
+    session = db.scalar(
+        select(CalibrationSession).where(
+            CalibrationSession.lot_id == calibration_lot.id,
             CalibrationSession.analyte == "upsa",
             CalibrationSession.status == "closed",
-            QmsLot.full_lot_record_code == selected_lot.full_lot_record_code,
-        ).order_by(CalibrationSession.closed_at.desc()))
-        if session is not None:
-            calibration_lot = db.get(QmsLot, session.lot_id)
-
+        ).order_by(CalibrationSession.closed_at.desc())
+    )
     if session is None:
-        raise HTTPException(status_code=404, detail="Nessuna calibrazione uPSA chiusa associata al lotto selezionato")
+        raise HTTPException(status_code=404, detail=f"Nessuna calibrazione uPSA chiusa per il lotto LF strips collegato {calibration_lot.full_lot_record_code}")
 
     metric_names = ["t_height", "t_area", "t_width", "t_fwhm", "c_height", "c_area", "c_width", "c_fwhm", "height_ratio", "area_ratio"]
     measurements = []
-
-    # New workflow source: CalibrationPoint + CalibrationMeasurement.
     points = list(db.scalars(select(CalibrationPoint).where(
         CalibrationPoint.session_id == session.id,
         CalibrationPoint.optical_score == score,
@@ -164,7 +167,6 @@ def calibration_reference(lot_id: uuid.UUID, score: int = Query(ge=0, le=4), db:
         )):
             row = {name: getattr(measurement, name, None) for name in metric_names}
             raw = measurement.raw_measurement or {}
-            # Manual matrices may store the only available digital reference as T/C Area.
             if row.get("area_ratio") is None:
                 for key in ("area_ratio", "t_c_area", "tc_area", "T_C_area"):
                     try:
@@ -174,28 +176,23 @@ def calibration_reference(lot_id: uuid.UUID, score: int = Query(ge=0, le=4), db:
                         pass
             row["source"] = measurement.source
             row["slot"] = point.concentration_slot
-            if any(row[name] is not None for name in metric_names):
-                measurements.append(row)
+            if any(row[name] is not None for name in metric_names): measurements.append(row)
 
-    # Legacy Reader source, only when workflow measurements are unavailable.
     if not measurements:
+        # Legacy/manual-matrix records are linked by calibration code.
         for record in db.scalars(_records_query(session)):
             item = _measurement(record)
             if item and item["score"] == score:
-                item["source"] = "READER_LEGACY"
-                measurements.append(item)
+                item["source"] = "READER_LEGACY"; measurements.append(item)
 
-    available_metrics = {}
+    metrics = {}
     for name in metric_names:
         values = [float(row[name]) for row in measurements if row.get(name) is not None]
-        if values:
-            available_metrics[name] = {"mean": statistics.mean(values), **_aggregate(values)}
-
+        if values: metrics[name] = {"mean": statistics.mean(values), **_aggregate(values)}
     if not measurements:
         raise HTTPException(status_code=404, detail="Calibrazione chiusa trovata, ma nessun riferimento disponibile per lo score ottico selezionato")
-    if not available_metrics:
+    if not metrics:
         raise HTTPException(status_code=409, detail="La calibrazione chiusa non contiene parametri digitali confrontabili, incluso T/C Area")
-
     return {
         "calibration_code": session.calibration_code,
         "selected_device_lot_id": selected_lot.id,
@@ -205,8 +202,8 @@ def calibration_reference(lot_id: uuid.UUID, score: int = Query(ge=0, le=4), db:
         "closed_at": session.closed_at,
         "score": score,
         "replicate_count": len(measurements),
-        "reference_source": "workflow",
-        "metrics": available_metrics,
+        "reference_source": "workflow_or_legacy",
+        "metrics": metrics,
     }
 @router.get("", response_model=list[CalibrationSessionDetail])
 def list_calibrations(
