@@ -163,6 +163,15 @@ def calibration_reference(lot_id: uuid.UUID, score: int = Query(ge=0, le=4), db:
             CalibrationMeasurement.status == "COMPLETED",
         )):
             row = {name: getattr(measurement, name, None) for name in metric_names}
+            raw = measurement.raw_measurement or {}
+            # Manual matrices may store the only available digital reference as T/C Area.
+            if row.get("area_ratio") is None:
+                for key in ("area_ratio", "t_c_area", "tc_area", "T_C_area"):
+                    try:
+                        if raw.get(key) is not None:
+                            row["area_ratio"] = float(raw[key]); break
+                    except (TypeError, ValueError):
+                        pass
             row["source"] = measurement.source
             row["slot"] = point.concentration_slot
             if any(row[name] is not None for name in metric_names):
@@ -185,7 +194,7 @@ def calibration_reference(lot_id: uuid.UUID, score: int = Query(ge=0, le=4), db:
     if not measurements:
         raise HTTPException(status_code=404, detail="Calibrazione chiusa trovata, ma nessun riferimento disponibile per lo score ottico selezionato")
     if not available_metrics:
-        raise HTTPException(status_code=409, detail="La calibrazione chiusa contiene solo valori manuali e non parametri Reader T/C confrontabili")
+        raise HTTPException(status_code=409, detail="La calibrazione chiusa non contiene parametri digitali confrontabili, incluso T/C Area")
 
     return {
         "calibration_code": session.calibration_code,
