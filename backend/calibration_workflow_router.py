@@ -105,3 +105,48 @@ def reopen_workflow(code: str, db: Session = Depends(get_db)):
     s=db.scalar(select(CalibrationSession).where(CalibrationSession.calibration_code==code))
     if not s: raise HTTPException(404,'Calibrazione non trovata')
     s.status='open'; s.closed_at=None; db.commit(); return {'calibration_code':code,'status':s.status}
+
+
+@router.post('/uzinc/plans', status_code=201)
+def create_uzinc_plan(payload: PlanCreate, db: Session = Depends(get_db)):
+    lot = db.get(QmsLot, payload.lot_id)
+    if not lot or lot.lr_document_code != 'LR-000198':
+        raise HTTPException(409, 'La calibrazione uZinc richiede un lotto LR-000198')
+    s = db.scalar(select(CalibrationSession).where(CalibrationSession.calibration_code == payload.calibration_code))
+    if not s:
+        s = CalibrationSession(calibration_code=payload.calibration_code, analyte='uzinc', lot_id=lot.id, status='open'); db.add(s); db.flush()
+    elif s.analyte != 'uzinc' or s.lot_id != lot.id:
+        raise HTTPException(409, 'Codice calibrazione gia associato a un altro analita o lotto')
+    plan = db.scalar(select(CalibrationPlan).where(CalibrationPlan.session_id == s.id))
+    if plan:
+        plan.expected_concentrations=payload.expected_concentrations; plan.default_replicates=payload.default_replicates
+    else:
+        plan=CalibrationPlan(session_id=s.id, expected_concentrations=payload.expected_concentrations, default_replicates=payload.default_replicates); db.add(plan)
+    db.commit()
+    return {'calibration_code':s.calibration_code,'lot_id':s.lot_id,'analyte':'uzinc','expected_concentrations':plan.expected_concentrations,'default_replicates':plan.default_replicates,'status':s.status}
+
+@router.post('/uzinc/points', status_code=201)
+def create_uzinc_point(payload: dict, db: Session = Depends(get_db)):
+    try:
+        code=str(payload['calibration_code']); lot_id=uuid.UUID(str(payload['lot_id'])); idx=int(payload['point_index']); conc=float(payload['instrumental_concentration']); reps=int(payload['planned_replicates'])
+    except Exception: raise HTTPException(422,'Dati punto uZinc non validi')
+    if idx < 1 or idx > 50 or conc < 0 or reps < 1 or reps > 10: raise HTTPException(422,'Dati punto uZinc fuori intervallo')
+    s=db.scalar(select(CalibrationSession).where(CalibrationSession.calibration_code==code,CalibrationSession.analyte=='uzinc'))
+    if not s or s.lot_id != lot_id: raise HTTPException(404,'Sessione uZinc non trovata')
+    if s.status=='closed': raise HTTPException(409,'La calibrazione e chiusa. Premi Modifica prima di aggiornare la matrice.')
+    existing=db.scalar(select(CalibrationPoint).where(CalibrationPoint.session_id==s.id,CalibrationPoint.optical_score==idx,CalibrationPoint.concentration_slot=='A'))
+    if existing:
+        out=serialize(db,existing); out['duplicate']=True; return out
+    p=CalibrationPoint(session_id=s.id,optical_score=idx,concentration_slot='A',instrumental_concentration=conc,concentration_unit='ug/mL',concentration_normalized_ng_ml=conc*1000,planned_replicates=reps,acquisition_mode=str(payload.get('acquisition_mode','MANUAL')))
+    db.add(p); db.commit(); db.refresh(p); return serialize(db,p)
+
+@router.post('/uzinc/points/{point_id}/measurements', status_code=201)
+def add_uzinc_measurement(point_id: uuid.UUID, payload: MeasurementCreate, db: Session = Depends(get_db)):
+    p=db.get(CalibrationPoint,point_id)
+    if not p: raise HTTPException(404,'Punto non trovato')
+    s=db.get(CalibrationSession,p.session_id)
+    if not s or s.analyte!='uzinc': raise HTTPException(409,'Il punto non appartiene a una calibrazione uZinc')
+    expected=next_rep(db,p)
+    if expected is None: raise HTTPException(409,'Punto completato')
+    if payload.replicate_number != expected: raise HTTPException(409,f'Replica attesa: {expected}')
+    m=CalibrationMeasurement(point_id=p.id,status='COMPLETED',**payload.model_dump()); db.add(m); p.completed_replicates+=1; db.flush(); p.status='COMPLETED' if next_rep(db,p) is None else 'IN_PROGRESS'; db.commit(); return {'id':m.id,'point':serialize(db,p)}
