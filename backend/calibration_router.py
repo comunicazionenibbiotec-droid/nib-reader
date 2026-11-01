@@ -7,6 +7,7 @@ from sqlalchemy import func, select
 from sqlalchemy.orm import Session
 from database import get_db
 from calibration_models import CalibrationSession
+from calibration_workflow_models import CalibrationPoint, CalibrationMeasurement
 from calibration_schemas import CalibrationLotUpdate, CalibrationSessionCreate, CalibrationSessionDetail
 from qms_models import QmsLot
 from record_models import TestRecord
@@ -24,8 +25,20 @@ def _records_query(session: CalibrationSession):
     )
 
 
+def _workflow_measurement_count(db: Session, session: CalibrationSession) -> int:
+    return int(db.scalar(
+        select(func.count()).select_from(CalibrationMeasurement)
+        .join(CalibrationPoint, CalibrationMeasurement.point_id == CalibrationPoint.id)
+        .where(
+            CalibrationPoint.session_id == session.id,
+            CalibrationMeasurement.status == "COMPLETED",
+        )
+    ) or 0)
+
 def _detail(db: Session, session: CalibrationSession) -> dict[str, Any]:
-    count = db.scalar(select(func.count()).select_from(_records_query(session).subquery())) or 0
+    reader_count = db.scalar(select(func.count()).select_from(_records_query(session).subquery())) or 0
+    workflow_count = _workflow_measurement_count(db, session)
+    count = max(int(reader_count), workflow_count)
     lot = db.get(QmsLot, session.lot_id) if session.lot_id is not None else None
     return {
         "id": session.id,
@@ -250,8 +263,11 @@ def get_calibration(calibration_code: str, db: Session = Depends(get_db)):
 def close_calibration(calibration_code: str, db: Session = Depends(get_db)):
     session = db.scalar(select(CalibrationSession).where(CalibrationSession.calibration_code == calibration_code))
     if not session: raise HTTPException(status_code=404, detail="Calibration not found")
-    count = db.scalar(select(func.count()).select_from(_records_query(session).subquery())) or 0
-    if count < 1: raise HTTPException(status_code=409, detail="Save at least one acquisition before closing")
+    reader_count = db.scalar(select(func.count()).select_from(_records_query(session).subquery())) or 0
+    workflow_count = _workflow_measurement_count(db, session)
+    count = max(int(reader_count), workflow_count)
+    if count < 1:
+        raise HTTPException(status_code=409, detail="Salva almeno una replica prima di chiudere la calibrazione")
     session.status = "closed"; session.closed_at = datetime.now(timezone.utc)
     db.commit(); db.refresh(session)
     return _detail(db, session)
