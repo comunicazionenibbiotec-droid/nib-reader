@@ -7,9 +7,20 @@ from database import get_db
 from calibration_models import CalibrationSession
 from calibration_workflow_models import CalibrationPlan, CalibrationPoint, CalibrationMeasurement
 from calibration_workflow_schemas import PlanCreate, PointCreate, MeasurementCreate, SkipCreate
+from pydantic import BaseModel, Field
 from qms_models import QmsLot
 
 router = APIRouter(prefix='/calibration-workflows', tags=['calibration-workflows'])
+
+class UzincPointCreate(BaseModel):
+    calibration_code: str = Field(min_length=1, max_length=80)
+    lot_id: uuid.UUID
+    optical_score: int = Field(ge=0, le=4)
+    concentration_slot: str = Field(pattern='^[AB]$')
+    instrumental_concentration: float = Field(ge=0)
+    concentration_unit: str = 'ug/mL'
+    planned_replicates: int = Field(ge=1, le=10)
+    acquisition_mode: str = 'MANUAL'
 
 def normalized(value, unit): return round(value * 1000 if unit == 'ug/mL' else value, 6)
 def next_rep(db, p):
@@ -110,8 +121,8 @@ def reopen_workflow(code: str, db: Session = Depends(get_db)):
 @router.post('/uzinc/plans', status_code=201)
 def create_uzinc_plan(payload: PlanCreate, db: Session = Depends(get_db)):
     lot = db.get(QmsLot, payload.lot_id)
-    if not lot or lot.lr_document_code != 'LR-000198':
-        raise HTTPException(409, 'La calibrazione uZinc richiede un lotto LR-000198')
+    if not lot or lot.lr_document_code != 'LR-000104':
+        raise HTTPException(409, 'La calibrazione uZinc richiede un lotto LR-000104')
     s = db.scalar(select(CalibrationSession).where(CalibrationSession.calibration_code == payload.calibration_code))
     if not s:
         s = CalibrationSession(calibration_code=payload.calibration_code, analyte='uzinc', lot_id=lot.id, status='open'); db.add(s); db.flush()
@@ -126,18 +137,15 @@ def create_uzinc_plan(payload: PlanCreate, db: Session = Depends(get_db)):
     return {'calibration_code':s.calibration_code,'lot_id':s.lot_id,'analyte':'uzinc','expected_concentrations':plan.expected_concentrations,'default_replicates':plan.default_replicates,'status':s.status}
 
 @router.post('/uzinc/points', status_code=201)
-def create_uzinc_point(payload: dict, db: Session = Depends(get_db)):
-    try:
-        code=str(payload['calibration_code']); lot_id=uuid.UUID(str(payload['lot_id'])); idx=int(payload['point_index']); conc=float(payload['instrumental_concentration']); reps=int(payload['planned_replicates'])
-    except Exception: raise HTTPException(422,'Dati punto uZinc non validi')
-    if idx < 1 or idx > 50 or conc < 0 or reps < 1 or reps > 10: raise HTTPException(422,'Dati punto uZinc fuori intervallo')
+def create_uzinc_point(payload: UzincPointCreate, db: Session = Depends(get_db)):
+    code=payload.calibration_code; lot_id=payload.lot_id; idx=payload.optical_score; slot=payload.concentration_slot; conc=payload.instrumental_concentration; reps=payload.planned_replicates
     s=db.scalar(select(CalibrationSession).where(CalibrationSession.calibration_code==code,CalibrationSession.analyte=='uzinc'))
     if not s or s.lot_id != lot_id: raise HTTPException(404,'Sessione uZinc non trovata')
     if s.status=='closed': raise HTTPException(409,'La calibrazione e chiusa. Premi Modifica prima di aggiornare la matrice.')
-    existing=db.scalar(select(CalibrationPoint).where(CalibrationPoint.session_id==s.id,CalibrationPoint.optical_score==idx,CalibrationPoint.concentration_slot=='A'))
+    existing=db.scalar(select(CalibrationPoint).where(CalibrationPoint.session_id==s.id,CalibrationPoint.optical_score==idx,CalibrationPoint.concentration_slot==slot))
     if existing:
         out=serialize(db,existing); out['duplicate']=True; return out
-    p=CalibrationPoint(session_id=s.id,optical_score=idx,concentration_slot='A',instrumental_concentration=conc,concentration_unit='ug/mL',concentration_normalized_ng_ml=conc*1000,planned_replicates=reps,acquisition_mode=str(payload.get('acquisition_mode','MANUAL')))
+    p=CalibrationPoint(session_id=s.id,optical_score=idx,concentration_slot=slot,instrumental_concentration=conc,concentration_unit=payload.concentration_unit,concentration_normalized_ng_ml=conc*1000 if payload.concentration_unit=='ug/mL' else conc,planned_replicates=reps,acquisition_mode=payload.acquisition_mode)
     db.add(p); db.commit(); db.refresh(p); return serialize(db,p)
 
 @router.post('/uzinc/points/{point_id}/measurements', status_code=201)
