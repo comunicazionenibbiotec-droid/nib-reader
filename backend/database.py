@@ -89,6 +89,8 @@ def create_database_tables() -> None:
 
     if not DATABASE_URL.startswith("sqlite"):
         migrate_record_classification_columns()
+        from calibration_workflow_migration import migrate_calibration_workflow
+        migrate_calibration_workflow()
         from record_storage_migration import migrate_record_storage_columns
         migrate_record_storage_columns()
         migrate_qms_qc_columns()

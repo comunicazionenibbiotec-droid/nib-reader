@@ -16,6 +16,7 @@ from models import ImageRequest
 from records_router import router as records_router
 from record_images_router import router as record_images_router
 from calibration_router import router as calibration_router
+from calibration_workflow_router import router as calibration_workflow_router
 from qms_router import router as qms_router
 from risk_router import router as risk_router
 
@@ -47,6 +48,7 @@ app = FastAPI(
 app.include_router(records_router)
 app.include_router(record_images_router)
 app.include_router(calibration_router)
+app.include_router(calibration_workflow_router)
 app.include_router(qms_router)
 app.include_router(risk_router)
 

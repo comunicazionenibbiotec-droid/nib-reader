@@ -60,14 +60,17 @@ def client():
     )
 
 
-def build_object_key(record_id: str, filename: str) -> str:
+def build_object_key(record_id: str, filename: str, domain: str = "clinical", session_id: str | None = None) -> str:
     safe = "".join(c for c in filename if c.isalnum() or c in "._-")
-    return f"{image_prefix()}/{record_id}/{safe}"
+    safe_domain = "/".join("".join(c for c in part if c.isalnum() or c in "_-") for part in domain.strip("/").split("/"))
+    if session_id:
+        return f"{image_prefix()}/{safe_domain}/{session_id}/{record_id}/{safe}"
+    return f"{image_prefix()}/{safe_domain}/{record_id}/{safe}"
 
 
-def upload_jpeg(record_id: str, filename: str, data: bytes) -> StoredImage:
+def upload_jpeg(record_id: str, filename: str, data: bytes, domain: str = "clinical", session_id: str | None = None) -> StoredImage:
     digest = hashlib.sha256(data).hexdigest()
-    key = build_object_key(record_id, filename)
+    key = build_object_key(record_id, filename, domain, session_id)
     client().put_object(
         Bucket=bucket_name(), Key=key, Body=data,
         ContentType="image/jpeg",

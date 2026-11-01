@@ -40,7 +40,13 @@ async def upload_record_image(record_id: uuid.UUID, image: UploadFile = File(...
     record.image_upload_error = None
     db.commit()
     try:
-        stored = upload_jpeg(str(record.id), expected, data)
+        domain = "clinical"
+        session_id = None
+        if record.record_purpose == "research": domain = "research"
+        elif record.record_purpose == "calibration":
+            domain = f"calibrations/{record.calibration_analyte or 'unknown'}"
+            session_id = record.calibration_code
+        stored = upload_jpeg(str(record.id), expected, data, domain=domain, session_id=session_id)
         old_key = record.image_object_key
         record.image_storage_status = "UPLOADED"
         record.image_object_key = stored.object_key
