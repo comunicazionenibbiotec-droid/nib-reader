@@ -205,6 +205,63 @@ def calibration_reference(lot_id: uuid.UUID, score: int = Query(ge=0, le=4), db:
         "reference_source": "workflow_or_legacy",
         "metrics": metrics,
     }
+@router.get("/reference-uzinc")
+def uzinc_calibration_reference(lot_id: uuid.UUID, score: int = Query(ge=0, le=4), db: Session = Depends(get_db)):
+    selected_lot = db.get(QmsLot, lot_id)
+    if selected_lot is None:
+        raise HTTPException(status_code=404, detail="Lotto ZenPSA Pro selezionato non trovato")
+    calibration_lot = selected_lot
+    if selected_lot.lr_document_code == "LR-000198":
+        calibration_lot = db.scalar(
+            select(QmsLot).join(QmsLotRelationship, QmsLotRelationship.parent_lot_id == QmsLot.id).where(
+                QmsLotRelationship.child_lot_id == selected_lot.id,
+                QmsLot.lr_document_code == "LR-000104",
+            ).order_by(QmsLotRelationship.created_at.desc())
+        )
+        if calibration_lot is None:
+            raise HTTPException(status_code=404, detail="Il lotto ZenPSA Pro selezionato non ha un lotto Colorimetric pad LR-000104 collegato")
+    elif selected_lot.lr_document_code != "LR-000104":
+        raise HTTPException(status_code=409, detail="Il controllo uZinc richiede un lotto ZenPSA Pro LR-000198 o Colorimetric pad LR-000104")
+    session = db.scalar(select(CalibrationSession).where(
+        CalibrationSession.lot_id == calibration_lot.id,
+        CalibrationSession.analyte == "uzinc",
+        CalibrationSession.status == "closed",
+    ).order_by(CalibrationSession.closed_at.desc()))
+    if session is None:
+        raise HTTPException(status_code=404, detail=f"Nessuna calibrazione uZinc chiusa per il lotto Colorimetric pad collegato {calibration_lot.full_lot_record_code}")
+    values = {"lab_a": [], "hue_lab": []}
+    points = list(db.scalars(select(CalibrationPoint).where(
+        CalibrationPoint.session_id == session.id,
+        CalibrationPoint.optical_score == score,
+    )))
+    for point in points:
+        for measurement in db.scalars(select(CalibrationMeasurement).where(
+            CalibrationMeasurement.point_id == point.id,
+            CalibrationMeasurement.status == "COMPLETED",
+        )):
+            raw = measurement.raw_measurement or {}
+            color = raw.get("colorimetry") or raw.get("roi_AW_analysis") or {}
+            promising = color.get("promising_metrics") or raw.get("promising_metrics") or {}
+            for key in ("lab_a", "hue_lab"):
+                candidate = promising.get(key, raw.get(key))
+                try:
+                    number = float(candidate)
+                    if number == number: values[key].append(number)
+                except (TypeError, ValueError):
+                    pass
+    metrics = {key: {"mean": statistics.mean(items), **_aggregate(items)} for key, items in values.items() if items}
+    if "lab_a" not in metrics:
+        raise HTTPException(status_code=409, detail="La calibrazione uZinc chiusa non contiene il parametro a* Lab per lo score selezionato")
+    return {
+        "calibration_code": session.calibration_code,
+        "selected_device_lot_id": selected_lot.id,
+        "lot_id": calibration_lot.id,
+        "lot_code": calibration_lot.full_lot_record_code,
+        "score": score,
+        "replicate_count": len(values["lab_a"]),
+        "metrics": metrics,
+    }
+
 @router.get("", response_model=list[CalibrationSessionDetail])
 def list_calibrations(
     analyte: str | None = Query(default=None, pattern="^(upsa|uzinc)$"),
