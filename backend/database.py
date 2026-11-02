@@ -1,92 +1,41 @@
 import os
 from collections.abc import Generator
-
 from sqlalchemy import create_engine, text
 from sqlalchemy.orm import DeclarativeBase, Session, sessionmaker
-
 
 class Base(DeclarativeBase):
     pass
 
-
 def _database_url() -> str:
     value = os.getenv("DATABASE_URL", "sqlite:///./zenpsa_local.db")
-
     if value.startswith("postgres://"):
-        return value.replace(
-            "postgres://",
-            "postgresql+psycopg://",
-            1,
-        )
-
+        return value.replace("postgres://", "postgresql+psycopg://", 1)
     if value.startswith("postgresql://"):
-        return value.replace(
-            "postgresql://",
-            "postgresql+psycopg://",
-            1,
-        )
-
+        return value.replace("postgresql://", "postgresql+psycopg://", 1)
     return value
 
-
 DATABASE_URL = _database_url()
-
-CONNECT_ARGS = (
-    {"check_same_thread": False}
-    if DATABASE_URL.startswith("sqlite")
-    else {}
-)
-
-engine = create_engine(
-    DATABASE_URL,
-    pool_pre_ping=True,
-    connect_args=CONNECT_ARGS,
-)
-
-SessionLocal = sessionmaker(
-    bind=engine,
-    autoflush=False,
-    expire_on_commit=False,
-)
-
+CONNECT_ARGS = {"check_same_thread": False} if DATABASE_URL.startswith("sqlite") else {}
+engine = create_engine(DATABASE_URL, pool_pre_ping=True, connect_args=CONNECT_ARGS)
+SessionLocal = sessionmaker(bind=engine, autoflush=False, expire_on_commit=False)
 
 def create_database_tables() -> None:
     """Register all ORM models, create missing tables and run migrations."""
-
-    # These imports must occur before Base.metadata.create_all().
-    # Importing the models registers their tables in SQLAlchemy metadata.
     from record_models import TestRecord
-    from qms_models import (
-        QmsLot,
-        QmsLotRecordType,
-        QmsLotRelationship,
-        QmsProduct,
-        QmsQcRecord,
-    )
+    from qms_models import QmsLot, QmsLotRecordType, QmsLotRelationship, QmsProduct, QmsQcRecord
     from risk_models import RiskProbabilityRow
     from calibration_models import CalibrationSession
-
-    # Silence linters while keeping the model-registration imports explicit.
-    _ = (
-        TestRecord,
-        QmsLot,
-        QmsLotRecordType,
-        QmsLotRelationship,
-        QmsProduct,
-        QmsQcRecord,
-        RiskProbabilityRow,
-        CalibrationSession,
-    )
-
+    from calibration_workflow_models import CalibrationPlan, CalibrationPoint, CalibrationMeasurement
+    from clinical_models import ClinicalPatient, ClinicalCase, ClinicalVisit, MriOutcome, BiopsyOutcome, ProgressionOutcome, ModelPrediction
+    _ = (TestRecord, QmsLot, QmsLotRecordType, QmsLotRelationship, QmsProduct, QmsQcRecord, RiskProbabilityRow, CalibrationSession, CalibrationPlan, CalibrationPoint, CalibrationMeasurement, ClinicalPatient, ClinicalCase, ClinicalVisit, MriOutcome, BiopsyOutcome, ProgressionOutcome, ModelPrediction)
     Base.metadata.create_all(bind=engine)
-
     with SessionLocal() as session:
         from qms_service import seed_qms_master_data
-
         seed_qms_master_data(session)
         from risk_router import seed_risk_probability_matrix
         seed_risk_probability_matrix(session)
-
+    from clinical_migration import migrate_clinical_longitudinal
+    migrate_clinical_longitudinal()
     if not DATABASE_URL.startswith("sqlite"):
         migrate_record_classification_columns()
         from calibration_workflow_migration import migrate_calibration_workflow
@@ -96,10 +45,7 @@ def create_database_tables() -> None:
         migrate_qms_qc_columns()
         migrate_calibration_session_columns()
 
-
 def migrate_record_classification_columns() -> None:
-    """Apply idempotent PostgreSQL migrations for test_records."""
-
     statements = [
         "ALTER TABLE test_records ADD COLUMN IF NOT EXISTS record_purpose VARCHAR(30) NOT NULL DEFAULT 'unclassified'",
         "ALTER TABLE test_records ADD COLUMN IF NOT EXISTS study_code VARCHAR(80)",
@@ -127,20 +73,11 @@ def migrate_record_classification_columns() -> None:
         "CREATE INDEX IF NOT EXISTS ix_test_records_record_purpose ON test_records (record_purpose)",
         "CREATE INDEX IF NOT EXISTS ix_test_records_calibration_code ON test_records (calibration_code)",
     ]
-
     with engine.begin() as connection:
-        for statement in statements:
-            connection.execute(text(statement))
-
-    print(
-        "ZENPSA DB: classification migration verified",
-        flush=True,
-    )
-
+        for statement in statements: connection.execute(text(statement))
+    print("ZENPSA DB: classification migration verified", flush=True)
 
 def migrate_qms_qc_columns() -> None:
-    """Apply idempotent PostgreSQL migrations for QMS QC records."""
-
     statements = [
         "ALTER TABLE qms_qc_records ADD COLUMN IF NOT EXISTS analysis_data_json TEXT",
         "CREATE INDEX IF NOT EXISTS ix_qms_qc_records_lot_id ON qms_qc_records (lot_id)",
@@ -148,29 +85,18 @@ def migrate_qms_qc_columns() -> None:
         "CREATE INDEX IF NOT EXISTS ix_qms_qc_records_captured_at ON qms_qc_records (captured_at)",
         "CREATE INDEX IF NOT EXISTS ix_qms_qc_records_lot_date ON qms_qc_records (lot_id, captured_at)",
     ]
-
     with engine.begin() as connection:
-        for statement in statements:
-            connection.execute(text(statement))
-
-    print(
-        "ZENPSA DB: QMS QC migration verified",
-        flush=True,
-    )
-
+        for statement in statements: connection.execute(text(statement))
+    print("ZENPSA DB: QMS QC migration verified", flush=True)
 
 def get_db() -> Generator[Session, None, None]:
-    with SessionLocal() as session:
-        yield session
-
+    with SessionLocal() as session: yield session
 
 def migrate_calibration_session_columns() -> None:
-    """Link existing calibration sessions to an LR-000198 QMS lot."""
     statements = [
         "ALTER TABLE calibration_sessions ADD COLUMN IF NOT EXISTS lot_id UUID",
         "CREATE INDEX IF NOT EXISTS ix_calibration_sessions_lot_id ON calibration_sessions (lot_id)",
         "DO $$ BEGIN IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'fk_calibration_sessions_lot_id') THEN ALTER TABLE calibration_sessions ADD CONSTRAINT fk_calibration_sessions_lot_id FOREIGN KEY (lot_id) REFERENCES qms_lots(id) ON DELETE RESTRICT; END IF; END $$",
     ]
     with engine.begin() as connection:
-        for statement in statements:
-            connection.execute(text(statement))
+        for statement in statements: connection.execute(text(statement))
