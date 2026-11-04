@@ -16,6 +16,7 @@ from record_images_router import router as record_images_router
 from calibration_router import router as calibration_router
 from calibration_workflow_router import router as calibration_workflow_router
 from qms_router import router as qms_router
+from detector_v2_router import router as detector_v2_router
 from risk_router import router as risk_router
 from clinical_router import router as clinical_router
 
@@ -33,6 +34,7 @@ app.include_router(record_images_router)
 app.include_router(calibration_router)
 app.include_router(calibration_workflow_router)
 app.include_router(qms_router)
+app.include_router(detector_v2_router)
 app.include_router(risk_router)
 app.include_router(clinical_router)
 app.add_middleware(CORSMiddleware, allow_origins=["*"], allow_methods=["*"], allow_headers=["*"])
