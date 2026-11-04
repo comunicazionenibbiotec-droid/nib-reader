@@ -22,7 +22,7 @@ def jpeg_data_url(image,quality=92):
     return "data:image/jpeg;base64,"+base64.b64encode(buf).decode("ascii") if ok else None
 
 @router.get("/health")
-def health():return {"status":"online","version":"2.0.1-experimental","persistence":False,"clinical":False}
+def health():return {"status":"online","version":"2.0.2-experimental","persistence":False,"clinical":False}
 
 @router.post("/analyze")
 def analyze_v2(data:DetectorV2Request):

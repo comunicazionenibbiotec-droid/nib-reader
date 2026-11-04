@@ -20,3 +20,6 @@ The detector is intentionally preliminary and has only a synthetic smoke test. R
 
 ## v0.2
 Canonical crop changed from 1200x2400 to 1200x2340 to match the current cassette template aspect ratio (~1.95) instead of stretching every detected quadrilateral to 2.00. The response now reports source quadrilateral width/height/aspect and a diagnostic vertical_stretch_ratio.
+
+## v0.3
+Fix for visibly tilted/stretched canonical previews. V2 now rejects implausible cassette aspect ratios (outside 1.55-2.35), prefers real 4-corner contours when available, and preserves the aspect ratio of the detected quadrilateral during perspective rectification instead of forcing every candidate into a fixed 1200x2340 rectangle. The nominal template height remains reported for comparison only.

@@ -6,6 +6,8 @@ import numpy as np
 CANONICAL_WIDTH = 1200
 CANONICAL_HEIGHT = 2340
 EXPECTED_ASPECT = 1.95
+MIN_CASSETTE_ASPECT = 1.55
+MAX_CASSETTE_ASPECT = 2.35
 WINDOWS = {
     "A": {"x": .285, "y": .135, "w": .215, "h": .175, "shape": "circle", "analysis": True},
     "B": {"x": .545, "y": .120, "w": .205, "h": .205, "shape": "rounded_rect", "analysis": False},
@@ -22,9 +24,12 @@ def _angle_deg(p1,p2):
 
 def _warp(image,corners):
     src=_order_points(corners)
-    dst=np.array([[0,0],[CANONICAL_WIDTH-1,0],[CANONICAL_WIDTH-1,CANONICAL_HEIGHT-1],[0,CANONICAL_HEIGHT-1]],dtype=np.float32)
+    top=float(np.linalg.norm(src[1]-src[0])); bottom=float(np.linalg.norm(src[2]-src[3])); left=float(np.linalg.norm(src[3]-src[0])); right=float(np.linalg.norm(src[2]-src[1]))
+    source_w=max(1.0,(top+bottom)/2.0); source_h=max(1.0,(left+right)/2.0); source_aspect=source_h/source_w
+    target_h=int(round(CANONICAL_WIDTH*source_aspect)); target_h=max(1860,min(2820,target_h))
+    dst=np.array([[0,0],[CANONICAL_WIDTH-1,0],[CANONICAL_WIDTH-1,target_h-1],[0,target_h-1]],dtype=np.float32)
     matrix=cv2.getPerspectiveTransform(src,dst)
-    return cv2.warpPerspective(image,matrix,(CANONICAL_WIDTH,CANONICAL_HEIGHT),flags=cv2.INTER_CUBIC),matrix
+    return cv2.warpPerspective(image,matrix,(CANONICAL_WIDTH,target_h),flags=cv2.INTER_CUBIC),matrix,target_h
 
 def _candidate_contours(image):
     h,w=image.shape[:2]; scale=min(1.0,1100/max(h,w)); small=cv2.resize(image,None,fx=scale,fy=scale,interpolation=cv2.INTER_AREA) if scale<1 else image.copy()
@@ -49,16 +54,21 @@ def _score_quad(quad,frame_shape):
 
 def _find_best_quad(image):
     contours,scale,edges=_candidate_contours(image); candidates=[]
-    min_area=edges.shape[0]*edges.shape[1]*.035
+    min_area=edges.shape[0]*edges.shape[1]*.025
     for c in contours:
         area=cv2.contourArea(c)
         if area<min_area: continue
         peri=cv2.arcLength(c,True)
-        approx=cv2.approxPolyDP(c,.022*peri,True)
-        if len(approx)==4 and cv2.isContourConvex(approx): quad=approx.reshape(4,2).astype(np.float32)/scale
-        else:
-            rect=cv2.minAreaRect(c); quad=cv2.boxPoints(rect).astype(np.float32)/scale
-        score,metrics=_score_quad(quad,image.shape); candidates.append((score,quad,metrics))
+        approx=cv2.approxPolyDP(c,.018*peri,True)
+        quads=[]
+        if len(approx)==4 and cv2.isContourConvex(approx): quads.append(("contour4",approx.reshape(4,2).astype(np.float32)/scale))
+        rect=cv2.minAreaRect(c); quads.append(("minAreaRect",cv2.boxPoints(rect).astype(np.float32)/scale))
+        for method,quad in quads:
+            score,metrics=_score_quad(quad,image.shape)
+            aspect=metrics["aspect_ratio"]
+            if not (MIN_CASSETTE_ASPECT <= aspect <= MAX_CASSETTE_ASPECT): continue
+            metrics["method"]=method
+            candidates.append((score,quad,metrics))
     candidates.sort(key=lambda x:x[0],reverse=True)
     return candidates[0] if candidates else None
 
@@ -82,7 +92,7 @@ def detect_cassette_v2(image):
     if image is None or image.size==0:return {"detected":False,"reason":"empty_image","version":"2.0.0-experimental"}
     best=_find_best_quad(image)
     if best is None:return {"detected":False,"reason":"no_quadrilateral_candidate","version":"2.0.0-experimental","source":{"width":int(image.shape[1]),"height":int(image.shape[0])}}
-    outer_score,corners,outer_metrics=best; canonical,matrix=_warp(image,corners)
+    outer_score,corners,outer_metrics=best; canonical,matrix,canonical_height=_warp(image,corners)
     window_data={}; window_scores=[]
     for name,region in WINDOWS.items():
         score,quality=_window_geometry_score(canonical,region);window_scores.append(score);window_data[name]={"role":"analysis" if region["analysis"] else "alignment_only","expected":region,"quality":quality}
@@ -91,4 +101,4 @@ def detect_cassette_v2(image):
     top=float(np.linalg.norm(q[1]-q[0])); bottom=float(np.linalg.norm(q[2]-q[3])); left=float(np.linalg.norm(q[3]-q[0])); right=float(np.linalg.norm(q[2]-q[1]))
     source_w=(top+bottom)/2.0; source_h=(left+right)/2.0; source_aspect=source_h/max(source_w,1e-6)
     stretch_ratio=EXPECTED_ASPECT/max(source_aspect,1e-6)
-    return {"detected":bool(geometry_score>=.35),"version":"2.0.1-experimental","used_for_clinical_result":False,"source":{"width":int(image.shape[1]),"height":int(image.shape[0])},"corners":[{"x":round(float(x),2),"y":round(float(y),2)} for x,y in q],"rotation_deg":round(rotation,3),"source_quad":{"width_px":round(source_w,2),"height_px":round(source_h,2),"aspect_ratio":round(source_aspect,5),"canonical_aspect_ratio":EXPECTED_ASPECT,"vertical_stretch_ratio":round(stretch_ratio,5)},"outer_geometry_score":round(float(outer_score),3),"internal_geometry_score":round(internal,3),"geometry_score":round(float(geometry_score),3),"metrics":{k:round(float(v),5) for k,v in outer_metrics.items()},"canonical":{"width":CANONICAL_WIDTH,"height":CANONICAL_HEIGHT},"windows":window_data,"perspective_matrix":np.round(matrix,6).tolist(),"_canonical_image":canonical}
+    return {"detected":bool(geometry_score>=.35),"version":"2.0.2-experimental","used_for_clinical_result":False,"source":{"width":int(image.shape[1]),"height":int(image.shape[0])},"corners":[{"x":round(float(x),2),"y":round(float(y),2)} for x,y in q],"rotation_deg":round(rotation,3),"source_quad":{"width_px":round(source_w,2),"height_px":round(source_h,2),"aspect_ratio":round(source_aspect,5),"canonical_aspect_ratio":EXPECTED_ASPECT,"vertical_stretch_ratio":round(stretch_ratio,5)},"outer_geometry_score":round(float(outer_score),3),"internal_geometry_score":round(internal,3),"geometry_score":round(float(geometry_score),3),"metrics":{k:round(float(v),5) for k,v in outer_metrics.items()},"canonical":{"width":CANONICAL_WIDTH,"height":canonical_height,"target_template_height":CANONICAL_HEIGHT},"windows":window_data,"perspective_matrix":np.round(matrix,6).tolist(),"_canonical_image":canonical}
