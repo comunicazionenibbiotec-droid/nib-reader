@@ -17,3 +17,6 @@ Experimental, isolated OpenCV pipeline for cassette geometry. It does not change
 
 ## Current limitation
 The detector is intentionally preliminary and has only a synthetic smoke test. Real thresholds, expected A/B/C coordinates and geometry scoring must be tuned using real captures. Do not use its output for patient samples or clinical decisions.
+
+## v0.2
+Canonical crop changed from 1200x2400 to 1200x2340 to match the current cassette template aspect ratio (~1.95) instead of stretching every detected quadrilateral to 2.00. The response now reports source quadrilateral width/height/aspect and a diagnostic vertical_stretch_ratio.

@@ -4,8 +4,8 @@ import cv2
 import numpy as np
 
 CANONICAL_WIDTH = 1200
-CANONICAL_HEIGHT = 2400
-EXPECTED_ASPECT = CANONICAL_HEIGHT / CANONICAL_WIDTH
+CANONICAL_HEIGHT = 2340
+EXPECTED_ASPECT = 1.95
 WINDOWS = {
     "A": {"x": .285, "y": .135, "w": .215, "h": .175, "shape": "circle", "analysis": True},
     "B": {"x": .545, "y": .120, "w": .205, "h": .205, "shape": "rounded_rect", "analysis": False},
@@ -88,4 +88,7 @@ def detect_cassette_v2(image):
         score,quality=_window_geometry_score(canonical,region);window_scores.append(score);window_data[name]={"role":"analysis" if region["analysis"] else "alignment_only","expected":region,"quality":quality}
     internal=float(np.mean(window_scores)); geometry_score=.70*outer_score+.30*internal
     q=_order_points(corners); rotation=_angle_deg(q[0],q[1])
-    return {"detected":bool(geometry_score>=.35),"version":"2.0.0-experimental","used_for_clinical_result":False,"source":{"width":int(image.shape[1]),"height":int(image.shape[0])},"corners":[{"x":round(float(x),2),"y":round(float(y),2)} for x,y in q],"rotation_deg":round(rotation,3),"outer_geometry_score":round(float(outer_score),3),"internal_geometry_score":round(internal,3),"geometry_score":round(float(geometry_score),3),"metrics":{k:round(float(v),5) for k,v in outer_metrics.items()},"canonical":{"width":CANONICAL_WIDTH,"height":CANONICAL_HEIGHT},"windows":window_data,"perspective_matrix":np.round(matrix,6).tolist(),"_canonical_image":canonical}
+    top=float(np.linalg.norm(q[1]-q[0])); bottom=float(np.linalg.norm(q[2]-q[3])); left=float(np.linalg.norm(q[3]-q[0])); right=float(np.linalg.norm(q[2]-q[1]))
+    source_w=(top+bottom)/2.0; source_h=(left+right)/2.0; source_aspect=source_h/max(source_w,1e-6)
+    stretch_ratio=EXPECTED_ASPECT/max(source_aspect,1e-6)
+    return {"detected":bool(geometry_score>=.35),"version":"2.0.1-experimental","used_for_clinical_result":False,"source":{"width":int(image.shape[1]),"height":int(image.shape[0])},"corners":[{"x":round(float(x),2),"y":round(float(y),2)} for x,y in q],"rotation_deg":round(rotation,3),"source_quad":{"width_px":round(source_w,2),"height_px":round(source_h,2),"aspect_ratio":round(source_aspect,5),"canonical_aspect_ratio":EXPECTED_ASPECT,"vertical_stretch_ratio":round(stretch_ratio,5)},"outer_geometry_score":round(float(outer_score),3),"internal_geometry_score":round(internal,3),"geometry_score":round(float(geometry_score),3),"metrics":{k:round(float(v),5) for k,v in outer_metrics.items()},"canonical":{"width":CANONICAL_WIDTH,"height":CANONICAL_HEIGHT},"windows":window_data,"perspective_matrix":np.round(matrix,6).tolist(),"_canonical_image":canonical}
