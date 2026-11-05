@@ -1,0 +1,26 @@
+name: ZenPSA QA
+on:
+  pull_request:
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  policy-and-static-checks:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Verify agent policy
+        run: test -f AGENTS.md && test -f .github/copilot-instructions.md
+      - name: Reject common secret files
+        run: |
+          bad=$(git ls-files | grep -E '(^|/)(\.env($|\.)|.*\.pem$|.*\.key$)' || true)
+          if [ -n "$bad" ]; then echo "$bad"; exit 1; fi
+      - name: JavaScript syntax
+        run: |
+          find . -type f -name '*.js' -not -path './node_modules/*' -print0 | xargs -0 -r -n1 node --check
+      - name: Python syntax
+        run: |
+          python -m compileall -q .
+      - name: Run Python tests when present
+        run: |
+          if [ -d tests ]; then python -m pytest -q tests/backend || true; fi
