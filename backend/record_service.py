@@ -247,6 +247,18 @@ def patch_record(
     record: TestRecord,
     payload: RecordPatch,
 ) -> TestRecord:
+    if "base_filename" in payload.model_fields_set:
+        normalized_base_filename = str(payload.base_filename or "").strip()
+        if not normalized_base_filename:
+            raise HTTPException(status_code=422, detail="base_filename is required")
+        if any(char in normalized_base_filename for char in ("/", "\\")):
+            raise HTTPException(status_code=422, detail="base_filename cannot contain path separators")
+        if normalized_base_filename.lower().endswith((".json", ".jpg", ".jpeg", ".png")):
+            raise HTTPException(status_code=422, detail="base_filename must not contain a file extension")
+        duplicate = session.scalar(select(TestRecord).where(TestRecord.base_filename == normalized_base_filename, TestRecord.id != record.id))
+        if duplicate is not None:
+            raise HTTPException(status_code=409, detail="base_filename already exists")
+        record.base_filename = normalized_base_filename
     if payload.subject is not None:
         subject_data = payload.subject.model_dump(exclude_unset=True)
         subject_columns = {
@@ -259,7 +271,12 @@ def patch_record(
         }
         for source_name, column_name in subject_columns.items():
             if source_name in subject_data:
-                setattr(record, column_name, subject_data[source_name])
+                value = subject_data[source_name]
+                if source_name == "sample_code":
+                    value = str(value or "").strip()
+                    if not value:
+                        raise HTTPException(status_code=422, detail="sample_code is required")
+                setattr(record, column_name, value)
 
     if payload.classification is not None:
         classification_data = payload.classification.model_dump(exclude_unset=True)
@@ -302,6 +319,9 @@ def patch_record(
     # Build a new JSON-serializable object. Date values must be ISO strings,
     # not Python date objects, before they are written to JSON/JSONB.
     raw_record = dict(record.raw_record or {})
+    raw_record_info = dict(raw_record.get("record") or {})
+    raw_record_info["base_filename"] = record.base_filename
+    raw_record["record"] = raw_record_info
     raw_subject = dict(raw_record.get("subject") or {})
     raw_subject.update({
         "sample_code": record.sample_code,

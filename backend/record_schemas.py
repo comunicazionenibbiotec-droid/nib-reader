@@ -65,6 +65,7 @@ class InstrumentPatch(BaseModel):
 
 class RecordPatch(BaseModel):
     model_config = ConfigDict(extra="forbid")
+    base_filename: str | None = Field(default=None, min_length=1, max_length=160)
     subject: SubjectPatch | None = None
     classification: ClassificationPatch | None = None
     clinical: ClinicalPatch | None = None
