@@ -1,0 +1,16 @@
+{
+  "name": "zenpsa-playwright-tests",
+  "private": true,
+  "version": "0.1.0",
+  "scripts": {
+    "test:e2e": "playwright test",
+    "test:e2e:v2": "playwright test tests/e2e/detector-v2.spec.js",
+    "test:e2e:v1": "playwright test tests/e2e/reader-v1.spec.js",
+    "test:e2e:mobile": "playwright test --project=mobile-chrome",
+    "test:e2e:headed": "playwright test --headed",
+    "test:e2e:report": "playwright show-report"
+  },
+  "devDependencies": {
+    "@playwright/test": "^1.49.0"
+  }
+}
