@@ -145,14 +145,15 @@ def create_or_update_record(
     record.lot_id = analytical.get("lot_id")
 
     workflow = payload.model_extra.get("reader_workflow", {}) if payload.model_extra else {}
-    dilution = workflow.get("dilution", {}) if isinstance(workflow, dict) else {}
-    record.sample_condition = workflow.get("sample_condition") or info.get("sample_condition")
-    record.acquisition_pair_id = workflow.get("pair_id") or info.get("acquisition_pair_id")
-    record.dilution_factor = _number(dilution.get("factor"))
-    record.reference_urine_volume_ml = _number(dilution.get("reference_urine_volume_ml"))
-    record.target_mix_volume_ul = _number(dilution.get("target_mix_volume_ul"))
-    record.sample_volume_ul = _number(dilution.get("sample_volume_ul"))
-    record.solvent_volume_ul = _number(dilution.get("solvent_volume_ul"))
+    workflow = workflow if isinstance(workflow, dict) else {}
+    dilution = workflow.get("dilution", {}) if isinstance(workflow.get("dilution", {}), dict) else {}
+    record.sample_condition = _first_defined(workflow.get("sample_condition"), info.get("sample_condition"), subject.get("sample_condition"))
+    record.acquisition_pair_id = _first_defined(workflow.get("pair_id"), workflow.get("pairId"), info.get("acquisition_pair_id"), subject.get("acquisition_pair_id"))
+    record.dilution_factor = _number(_first_defined(dilution.get("factor"), dilution.get("displayedDilutionFactor"), dilution.get("dilutionFactor"), subject.get("dilution_factor")))
+    record.reference_urine_volume_ml = _number(_first_defined(dilution.get("reference_urine_volume_ml"), dilution.get("referenceUrineVolumeMl")))
+    record.target_mix_volume_ul = _number(_first_defined(dilution.get("target_mix_volume_ul"), dilution.get("targetMixVolumeUl")))
+    record.sample_volume_ul = _number(_first_defined(dilution.get("sample_volume_ul"), dilution.get("sampleVolumeUl"), subject.get("sample_volume_ul")))
+    record.solvent_volume_ul = _number(_first_defined(dilution.get("solvent_volume_ul"), dilution.get("solventVolumeUl"), subject.get("solvent_volume_ul")))
     if not getattr(record, "image_storage_status", None):
         record.image_storage_status = "NOT_REQUESTED"
 
@@ -181,8 +182,6 @@ def create_or_update_record(
         subject.get("gleason_score"),
     )
     record.diagnosis = clinical.get("diagnosis")
-    record.urine_color = clinical.get("urine_color", subject.get("urine_color"))
-    record.urine_turbid = bool(clinical.get("urine_turbid", subject.get("urine_turbid", False)))
     record.raw_record = raw
 
     if upsa:
@@ -242,71 +241,6 @@ def _recalculate_absolute(record: TestRecord, prefix: str) -> None:
     volume = record.urine_collection_volume_ml
     absolute = volume * corrected if volume is not None and corrected is not None else None
     setattr(record, f"{prefix}_absolute_quantity_ug", absolute)
-
-
-def _refresh_clinical_json(record: TestRecord) -> None:
-    raw_record = dict(record.raw_record or {})
-    raw_subject = dict(raw_record.get("subject") or {})
-    raw_subject.update({
-        "urine_collection_volume_ml": record.urine_collection_volume_ml,
-        "clinical_pathway": record.clinical_pathway,
-        "recruitment_center": record.recruitment_center,
-        "urine_color": record.urine_color,
-        "urine_turbid": record.urine_turbid,
-    })
-    raw_record["subject"] = raw_subject
-    manual = dict(raw_record.get("manual_data") or {})
-    clinical = dict(manual.get("clinical") or {})
-    clinical.update({
-        "age": record.age,
-        "serum_psa_ng_ml": record.serum_psa_ng_ml,
-        "dre_result": record.dre_result,
-        "pirads": record.pirads,
-        "prostate_volume_ml": record.prostate_volume_ml,
-        "gleason_score": record.gleason_score,
-        "diagnosis": record.diagnosis,
-        "urine_color": record.urine_color,
-        "urine_turbid": record.urine_turbid,
-    })
-    manual["clinical"] = clinical
-    manual["updated_at"] = datetime.now(timezone.utc).isoformat()
-    raw_record["manual_data"] = manual
-    record.raw_record = raw_record
-
-
-def _sync_pure_clinical_to_diluted(session: Session, pure: TestRecord, payload: RecordPatch) -> TestRecord | None:
-    """Copy only shared clinical fields from PURE to its paired DILUTED record."""
-    if str(pure.sample_condition or "").strip().upper() != "PURE":
-        return None
-    if not pure.acquisition_pair_id:
-        return None
-    subject_data = payload.subject.model_dump(exclude_unset=True) if payload.subject is not None else {}
-    clinical_changed = payload.clinical is not None or any(
-        key in subject_data for key in ("urine_collection_volume_ml", "clinical_pathway", "recruitment_center")
-    )
-    if not clinical_changed:
-        return None
-    diluted = session.scalar(
-        select(TestRecord).where(
-            TestRecord.acquisition_pair_id == pure.acquisition_pair_id,
-            TestRecord.sample_condition.ilike("DILUTED"),
-            TestRecord.id != pure.id,
-        )
-    )
-    if diluted is None:
-        return None
-    shared_fields = (
-        "urine_collection_volume_ml", "clinical_pathway", "recruitment_center",
-        "age", "serum_psa_ng_ml", "dre_result", "pirads",
-        "prostate_volume_ml", "gleason_score", "diagnosis",
-        "urine_color", "urine_turbid",
-    )
-    for field in shared_fields:
-        setattr(diluted, field, getattr(pure, field))
-    _recalculate_absolute(diluted, "upsa")
-    _recalculate_absolute(diluted, "uzinc")
-    _refresh_clinical_json(diluted)
-    return diluted
 
 
 def patch_record(
@@ -397,8 +331,6 @@ def patch_record(
         "optical_zinc_score_0_4": record.optical_zinc_score_0_4,
         "optical_psa_score_0_4": record.optical_psa_score_0_4,
         "recruitment_center": record.recruitment_center,
-        "urine_color": record.urine_color,
-        "urine_turbid": record.urine_turbid,
     })
     raw_record["subject"] = raw_subject
     raw_classification = dict(raw_record.get("classification") or {})
@@ -422,8 +354,6 @@ def patch_record(
         "prostate_volume_ml": record.prostate_volume_ml,
         "gleason_score": record.gleason_score,
         "diagnosis": record.diagnosis,
-        "urine_color": record.urine_color,
-        "urine_turbid": record.urine_turbid,
     }
     manual["upsa"] = _instrument_json(record, "upsa")
     manual["uzinc"] = _instrument_json(record, "uzinc")
@@ -431,7 +361,6 @@ def patch_record(
 
     raw_record["manual_data"] = manual
     record.raw_record = raw_record
-    _sync_pure_clinical_to_diluted(session, record, payload)
 
     try:
         session.commit()
