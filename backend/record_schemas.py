@@ -37,8 +37,6 @@ class ClinicalPatch(BaseModel):
     prostate_volume_ml: float | None = Field(default=None, gt=0)
     gleason_score: Gleason | None = None
     diagnosis: Diagnosis | None = None
-    urine_color: Literal["straw_yellow", "light", "dark"] | None = None
-    urine_turbid: bool | None = None
 
 
 class InstrumentPatch(BaseModel):
@@ -109,8 +107,6 @@ class RecordSummary(BaseModel):
     zinc_red_excess: float | None
     psa_area_t_c_ratio: float | None
     diagnosis: str | None
-    urine_color: str | None
-    urine_turbid: bool
     test_state: str | None
     test_valid: bool
     sample_condition: str | None
@@ -169,8 +165,6 @@ class RecordDetail(BaseModel):
     prostate_volume_ml: float | None
     gleason_score: str | None
     diagnosis: str | None
-    urine_color: str | None
-    urine_turbid: bool
     upsa_lot_id: str | None
     uzinc_lot_id: str | None
     upsa_instrumental_ug_ml: float | None
