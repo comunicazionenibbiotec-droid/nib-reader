@@ -42,6 +42,8 @@ def create_database_tables() -> None:
         migrate_calibration_workflow()
         from record_storage_migration import migrate_record_storage_columns
         migrate_record_storage_columns()
+        from urine_fields_migration import migrate_urine_fields
+        migrate_urine_fields()
         migrate_qms_qc_columns()
         migrate_calibration_session_columns()
 

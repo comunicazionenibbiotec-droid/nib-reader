@@ -181,6 +181,8 @@ def create_or_update_record(
         subject.get("gleason_score"),
     )
     record.diagnosis = clinical.get("diagnosis")
+    record.urine_color = clinical.get("urine_color", subject.get("urine_color"))
+    record.urine_turbid = bool(clinical.get("urine_turbid", subject.get("urine_turbid", False)))
     record.raw_record = raw
 
     if upsa:
@@ -353,6 +355,8 @@ def patch_record(
         "prostate_volume_ml": record.prostate_volume_ml,
         "gleason_score": record.gleason_score,
         "diagnosis": record.diagnosis,
+        "urine_color": record.urine_color,
+        "urine_turbid": record.urine_turbid,
     }
     manual["upsa"] = _instrument_json(record, "upsa")
     manual["uzinc"] = _instrument_json(record, "uzinc")
