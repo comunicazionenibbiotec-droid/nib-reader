@@ -58,6 +58,8 @@ class TestRecord(Base):
     prostate_volume_ml: Mapped[float | None] = mapped_column(Float)
     gleason_score: Mapped[str | None] = mapped_column(String(30))
     diagnosis: Mapped[str | None] = mapped_column(String(30), index=True)
+    urine_color: Mapped[str | None] = mapped_column(String(30))
+    urine_turbid: Mapped[bool] = mapped_column(Boolean, default=False)
 
     upsa_instrumental_ug_ml: Mapped[float | None] = mapped_column(Float)
     upsa_corrected_ug_ml: Mapped[float | None] = mapped_column(Float)
