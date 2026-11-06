@@ -244,6 +244,71 @@ def _recalculate_absolute(record: TestRecord, prefix: str) -> None:
     setattr(record, f"{prefix}_absolute_quantity_ug", absolute)
 
 
+def _refresh_clinical_json(record: TestRecord) -> None:
+    raw_record = dict(record.raw_record or {})
+    raw_subject = dict(raw_record.get("subject") or {})
+    raw_subject.update({
+        "urine_collection_volume_ml": record.urine_collection_volume_ml,
+        "clinical_pathway": record.clinical_pathway,
+        "recruitment_center": record.recruitment_center,
+        "urine_color": record.urine_color,
+        "urine_turbid": record.urine_turbid,
+    })
+    raw_record["subject"] = raw_subject
+    manual = dict(raw_record.get("manual_data") or {})
+    clinical = dict(manual.get("clinical") or {})
+    clinical.update({
+        "age": record.age,
+        "serum_psa_ng_ml": record.serum_psa_ng_ml,
+        "dre_result": record.dre_result,
+        "pirads": record.pirads,
+        "prostate_volume_ml": record.prostate_volume_ml,
+        "gleason_score": record.gleason_score,
+        "diagnosis": record.diagnosis,
+        "urine_color": record.urine_color,
+        "urine_turbid": record.urine_turbid,
+    })
+    manual["clinical"] = clinical
+    manual["updated_at"] = datetime.now(timezone.utc).isoformat()
+    raw_record["manual_data"] = manual
+    record.raw_record = raw_record
+
+
+def _sync_pure_clinical_to_diluted(session: Session, pure: TestRecord, payload: RecordPatch) -> TestRecord | None:
+    """Copy only shared clinical fields from PURE to its paired DILUTED record."""
+    if str(pure.sample_condition or "").strip().upper() != "PURE":
+        return None
+    if not pure.acquisition_pair_id:
+        return None
+    subject_data = payload.subject.model_dump(exclude_unset=True) if payload.subject is not None else {}
+    clinical_changed = payload.clinical is not None or any(
+        key in subject_data for key in ("urine_collection_volume_ml", "clinical_pathway", "recruitment_center")
+    )
+    if not clinical_changed:
+        return None
+    diluted = session.scalar(
+        select(TestRecord).where(
+            TestRecord.acquisition_pair_id == pure.acquisition_pair_id,
+            TestRecord.sample_condition.ilike("DILUTED"),
+            TestRecord.id != pure.id,
+        )
+    )
+    if diluted is None:
+        return None
+    shared_fields = (
+        "urine_collection_volume_ml", "clinical_pathway", "recruitment_center",
+        "age", "serum_psa_ng_ml", "dre_result", "pirads",
+        "prostate_volume_ml", "gleason_score", "diagnosis",
+        "urine_color", "urine_turbid",
+    )
+    for field in shared_fields:
+        setattr(diluted, field, getattr(pure, field))
+    _recalculate_absolute(diluted, "upsa")
+    _recalculate_absolute(diluted, "uzinc")
+    _refresh_clinical_json(diluted)
+    return diluted
+
+
 def patch_record(
     session: Session,
     record: TestRecord,
@@ -332,6 +397,8 @@ def patch_record(
         "optical_zinc_score_0_4": record.optical_zinc_score_0_4,
         "optical_psa_score_0_4": record.optical_psa_score_0_4,
         "recruitment_center": record.recruitment_center,
+        "urine_color": record.urine_color,
+        "urine_turbid": record.urine_turbid,
     })
     raw_record["subject"] = raw_subject
     raw_classification = dict(raw_record.get("classification") or {})
@@ -364,6 +431,7 @@ def patch_record(
 
     raw_record["manual_data"] = manual
     record.raw_record = raw_record
+    _sync_pure_clinical_to_diluted(session, record, payload)
 
     try:
         session.commit()
