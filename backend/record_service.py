@@ -52,6 +52,31 @@ def _captured_at(record_info: dict[str, Any]) -> datetime:
     return parsed if parsed.tzinfo else parsed.replace(tzinfo=timezone.utc)
 
 
+def _final_upsa_values(raw: dict[str, Any], backend: dict[str, Any], window_c: dict[str, Any]) -> tuple[float | None, str | None, bool]:
+    review = raw.get("roi_review") if isinstance(raw.get("roi_review"), dict) else {}
+    final_profile = raw.get("roi_C_analysis") if isinstance(raw.get("roi_C_analysis"), dict) else None
+    if not final_profile and isinstance(review.get("roi_profile_analysis"), dict):
+        final_profile = review.get("roi_profile_analysis")
+    final_profile = final_profile or {}
+    concordance = raw.get("upsa_optical_digital_concordance") if isinstance(raw.get("upsa_optical_digital_concordance"), dict) else {}
+    metrics = concordance.get("metrics") if isinstance(concordance.get("metrics"), dict) else {}
+    final_ratios = final_profile.get("ratios") if isinstance(final_profile.get("ratios"), dict) else {}
+    initial_ratios = window_c.get("ratios") if isinstance(window_c.get("ratios"), dict) else {}
+    ratio = _number(_first_defined(final_ratios.get("area_T_over_C"), metrics.get("areaRatio"), initial_ratios.get("peak_area_T_over_C")))
+    test_line = final_profile.get("test_line") if isinstance(final_profile.get("test_line"), dict) else {}
+    control_line = final_profile.get("control_line") if isinstance(final_profile.get("control_line"), dict) else {}
+    test_detected = _first_defined(test_line.get("detected"), metrics.get("testDetected"), window_c.get("test_line_present"))
+    control_detected = _first_defined(control_line.get("detected"), metrics.get("controlDetected"), window_c.get("control_line_present"))
+    if control_detected is False:
+        state, valid = "null_test", False
+    elif control_detected is True and test_detected is True:
+        state, valid = "valid_two_lines", True
+    elif control_detected is True and test_detected is False:
+        state, valid = "valid_one_line", True
+    else:
+        state, valid = backend.get("test_state") or window_c.get("test_state"), bool(backend.get("test_valid", False))
+    return ratio, state, valid
+
 def create_or_update_record(
     session: Session,
     payload: RecordCreate,
@@ -135,13 +160,10 @@ def create_or_update_record(
         )
     )
     record.zinc_red_excess = _number(absolute.get("red_excess"))
-    record.psa_area_t_c_ratio = _number(
-        ratios.get("peak_area_T_over_C")
-    )
-    record.test_state = (
-        backend.get("test_state") or window_c.get("test_state")
-    )
-    record.test_valid = bool(backend.get("test_valid", False))
+    final_psa_ratio, final_test_state, final_test_valid = _final_upsa_values(raw, backend, window_c)
+    record.psa_area_t_c_ratio = final_psa_ratio
+    record.test_state = final_test_state
+    record.test_valid = final_test_valid
     record.lot_id = analytical.get("lot_id")
 
     workflow = payload.model_extra.get("reader_workflow", {}) if payload.model_extra else {}
