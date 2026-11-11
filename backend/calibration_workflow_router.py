@@ -6,7 +6,7 @@ from sqlalchemy.orm import Session
 from database import get_db
 from calibration_models import CalibrationSession
 from calibration_workflow_models import CalibrationPlan, CalibrationPoint, CalibrationMeasurement
-from calibration_workflow_schemas import PlanCreate, PointCreate, MeasurementCreate, SkipCreate
+from calibration_workflow_schemas import PlanCreate, PointCreate, MeasurementCreate, UzincMeasurementUpdate, SkipCreate
 from pydantic import BaseModel, Field
 from qms_models import QmsLot
 
@@ -190,6 +190,38 @@ def create_uzinc_point(payload: UzincPointCreate, db: Session = Depends(get_db))
         out=serialize(db,existing); out['duplicate']=True; return out
     p=CalibrationPoint(session_id=s.id,optical_score=idx,concentration_slot=slot,instrumental_concentration=conc,concentration_unit=payload.concentration_unit,concentration_normalized_ng_ml=conc*1000 if payload.concentration_unit=='ug/mL' else conc,planned_replicates=reps,acquisition_mode=payload.acquisition_mode)
     db.add(p); db.commit(); db.refresh(p); return serialize(db,p)
+
+
+
+@router.patch('/uzinc/measurements/{measurement_id}')
+def update_uzinc_measurement(measurement_id: uuid.UUID, payload: UzincMeasurementUpdate, db: Session = Depends(get_db)):
+    measurement = db.get(CalibrationMeasurement, measurement_id)
+    if not measurement:
+        raise HTTPException(404, 'Misura non trovata')
+    point = db.get(CalibrationPoint, measurement.point_id)
+    session = db.get(CalibrationSession, point.session_id) if point else None
+    if not point or not session or session.analyte != 'uzinc':
+        raise HTTPException(409, 'La misura non appartiene a una calibrazione uZinc')
+    if session.status == 'closed':
+        raise HTTPException(409, 'La calibrazione e chiusa. Riaprila prima di modificare la replica.')
+    if str(measurement.source or '').upper() not in ('MANUAL',):
+        raise HTTPException(409, 'Le acquisizioni Reader sono in sola lettura e non possono essere modificate manualmente')
+
+    changes = payload.model_dump(exclude_unset=True)
+    raw_patch = changes.pop('raw_measurement', None)
+    if raw_patch is not None:
+        current_raw = dict(measurement.raw_measurement or {})
+        current_raw.update(raw_patch)
+        current_raw['manual_editor_updated_at'] = datetime.now(timezone.utc).isoformat()
+        measurement.raw_measurement = current_raw
+    for field, value in changes.items():
+        setattr(measurement, field, value)
+
+    if measurement.a_over_b is None and measurement.lab_a is not None and measurement.lab_b not in (None, 0):
+        measurement.a_over_b = measurement.lab_a / measurement.lab_b
+    db.commit()
+    db.refresh(measurement)
+    return serialize_measurement(measurement)
 
 @router.post('/uzinc/points/{point_id}/measurements', status_code=201)
 def add_uzinc_measurement(point_id: uuid.UUID, payload: MeasurementCreate, db: Session = Depends(get_db)):
