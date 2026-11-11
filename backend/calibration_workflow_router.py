@@ -31,7 +31,50 @@ def serialize(db, p):
 def serialize_measurement(m):
     raw = m.raw_measurement or {}
     image_url = raw.get('image_url') or raw.get('preview_url') or raw.get('signed_url') or raw.get('r2_signed_url')
-    return {'id':m.id,'replicate_number':m.replicate_number,'status':m.status,'source':m.source,'record_id':m.record_id,'skip_reason':m.skip_reason,'t_height':m.t_height,'t_area':m.t_area,'t_width':m.t_width,'t_fwhm':m.t_fwhm,'c_height':m.c_height,'c_area':m.c_area,'c_width':m.c_width,'c_fwhm':m.c_fwhm,'height_ratio':m.height_ratio,'area_ratio':m.area_ratio,'image_url':image_url,'raw_measurement':raw}
+    return {
+        'id': m.id,
+        'replicate_number': m.replicate_number,
+        'status': m.status,
+        'source': m.source,
+        'record_id': m.record_id,
+        'skip_reason': m.skip_reason,
+        # uPSA metrics.
+        't_height': m.t_height,
+        't_area': m.t_area,
+        't_width': m.t_width,
+        't_fwhm': m.t_fwhm,
+        'c_height': m.c_height,
+        'c_area': m.c_area,
+        'c_width': m.c_width,
+        'c_fwhm': m.c_fwhm,
+        'height_ratio': m.height_ratio,
+        'area_ratio': m.area_ratio,
+        # uZinc metrics.
+        'lab_l': m.lab_l,
+        'lab_a': m.lab_a,
+        'lab_b': m.lab_b,
+        'hue_lab': m.hue_lab,
+        'chroma': m.chroma,
+        'a_over_b': m.a_over_b,
+        'saturation': m.saturation,
+        'r_over_g': m.r_over_g,
+        'b_over_g': m.b_over_g,
+        'magenta_index': m.magenta_index,
+        'delta_e_white': m.delta_e_white,
+        'luminance_ratio': m.luminance_ratio,
+        # uZinc QC.
+        'white_luminance_cv': m.white_luminance_cv,
+        'white_overexposed_fraction': m.white_overexposed_fraction,
+        'sample_clipped_fraction': m.sample_clipped_fraction,
+        'white_clipped_fraction': m.white_clipped_fraction,
+        'sample_pixel_count': m.sample_pixel_count,
+        'white_pixel_count': m.white_pixel_count,
+        'disc_detected': m.disc_detected,
+        'detection_method': m.detection_method,
+        'uzinc_qc_status': m.uzinc_qc_status,
+        'image_url': image_url,
+        'raw_measurement': raw,
+    }
 def require_lot(db, lot_id):
     lot = db.get(QmsLot, lot_id)
     if not lot or lot.lr_document_code != 'LR-000122': raise HTTPException(409, 'La calibrazione uPSA richiede un lotto LR-000122')
@@ -101,7 +144,7 @@ def matrix(code: str, db: Session = Depends(get_db)):
     s=db.scalar(select(CalibrationSession).where(CalibrationSession.calibration_code==code))
     if not s: raise HTTPException(404,'Calibrazione non trovata')
     points=[get_point(p.id,db) for p in db.scalars(select(CalibrationPoint).where(CalibrationPoint.session_id==s.id).order_by(CalibrationPoint.optical_score,CalibrationPoint.concentration_slot))]
-    return {'calibration_code':code,'analyte':'upsa','status':s.status,'opened_at':s.opened_at,'closed_at':s.closed_at,'points':points}
+    return {'calibration_code':code,'analyte':s.analyte,'status':s.status,'opened_at':s.opened_at,'closed_at':s.closed_at,'points':points}
 
 @router.post('/sessions/{code}/close')
 def close_workflow(code: str, db: Session = Depends(get_db)):
